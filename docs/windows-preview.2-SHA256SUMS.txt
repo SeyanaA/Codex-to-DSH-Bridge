@@ -1,5 +1,5 @@
 8a3b8366331060d275f7dd03595def4b4754b6cf3cc88ff759435114ac4a75e2  Codex-to-DSH-Bridge-0.1.0-preview.2-windows-x64-setup.exe
 2f647acfcd8c4cd81801bd5357d1ff79079353abe1fcaa0bf62b8fd429128fdc  Codex-to-DSH-Bridge-0.1.0-preview.2-sources.zip
-18e12f0d4212ffb7d979111afd42262c82d50c889ee6e46bedec0f165950038c  RELEASE_NOTES.md
-744b384453b8f1c46fcdbbf7c12611392b599bb5131866e7ca6656b057f9e0e5  Windows-使用说明.md
+8b6520bb09a88b0cbae6c139b725d9d4b5d4f99e45366a2725050351cb0ab9a9  RELEASE_NOTES.md
+744b384453b8f1c46fcdbbf7c12611392b599bb5131866e7ca6656b057f9e0e5  Windows-usage.md
 47fd9e4c291f2d75d3d6be66b35ae941a150d07f946b7bc308cb8c8511c9091a  windows-installer-check.json

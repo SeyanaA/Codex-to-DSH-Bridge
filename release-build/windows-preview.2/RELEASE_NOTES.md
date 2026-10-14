@@ -12,7 +12,7 @@
 
 - `Codex-to-DSH-Bridge-0.1.0-preview.2-windows-x64-setup.exe`
 - `SHA256SUMS.txt`
-- `Windows-使用说明.md`
+- `Windows-usage.md`
 - `windows-installer-check.json`
 - `Codex-to-DSH-Bridge-0.1.0-preview.2-sources.zip`
 
@@ -22,4 +22,5 @@ DSH：https://github.com/deepseek-ai/deepseek-harness
 
 Crew：https://github.com/ZSeven-W/dsh-crew
 
-上传 GitHub Releases 时，可使用标签 `v0.1.0-preview.2`，勾选 Pre-release，将本文件正文作为发布说明，并上传上述资产。请将安装器作为 Release asset 上传。
+
+Mac 版继续使用 [v0.1.0-preview.1](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases/tag/v0.1.0-preview.1) 中的 DMG。本次发布仅新增 Windows x64 预览版。

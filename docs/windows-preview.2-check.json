@@ -1,0 +1,69 @@
+{
+  "product": "Codex-to-DSH Bridge",
+  "version": "0.1.0-preview.2",
+  "date": "2026-10-15",
+  "platform": "Windows x64",
+  "method": "NSIS silent installation in isolated user data, custom installation path containing Chinese characters and spaces",
+  "passed": true,
+  "node": "24.19.0",
+  "dsh": "0.2.1-alpha.3",
+  "crew": "0.1.0-rc.14",
+  "installerExitCode": 0,
+  "installedMcp": {
+    "installerLayout": true,
+    "node": true,
+    "registered": true,
+    "protocol": true,
+    "tools": [
+      "dsh_run_worker",
+      "dsh_worker_probe",
+      "dsh_worker_config",
+      "dsh_spawn_worker",
+      "dsh_worker_status",
+      "dsh_worker_result",
+      "dsh_worker_cancel"
+    ],
+    "hub": true,
+    "generation": {
+      "id": "hub-1-mv8dl8xq",
+      "status": "done",
+      "reply": "INSTALLER_MCP_OK",
+      "fileCreated": true,
+      "fileMatches": true,
+      "toolCalls": 1,
+      "error": null
+    },
+    "passed": true
+  },
+  "uninstall": {
+    "installedRuntimeRemoved": true,
+    "dshDataPreserved": true,
+    "userPreferencePreserved": true,
+    "otherMcpPreserved": true,
+    "exitCode": 0,
+    "managedMcpRemoved": true
+  },
+  "unmanagedMcpConflict": {
+    "expectedFailure": true,
+    "existingConfigPreserved": true
+  },
+  "packageAudit": {
+    "version": "0.1.0-preview.2",
+    "architecture": "windows-x64",
+    "files": 67358,
+    "uncompressedBytes": 844653929,
+    "packageEntries": 714,
+    "links": 0,
+    "privateFileMatches": 0,
+    "privateCredentialMatches": 0,
+    "crewSourceMatchesOriginal": true,
+    "digitalSignature": "not-signed"
+  },
+  "signature": "NotSigned",
+  "limits": [
+    "Windows interactive wizard and shortcut/registry branch were compiled but not executed in TESTMODE.",
+    "In-place uninstall was used to wait for completion; its running Uninstall.exe may remain in the temporary test directory.",
+    "No clean Windows VM, ARM64, Pro model, large parallel workload or image generation coverage.",
+    "DSH is an alpha preview; Crew Web continuation may require reselecting a model."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "codex-to-dsh-bridge-launcher",
+  "version": "0.1.0-preview.2",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Windows installer and MCP launcher for DSH Crew",
+  "engines": {
+    "node": ">=24"
+  }
+}

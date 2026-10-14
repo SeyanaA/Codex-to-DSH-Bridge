@@ -1,10 +1,14 @@
 {
   "name": "codex-to-dsh-bridge-launcher",
-  "version": "0.1.0-preview.1",
+  "version": "0.1.0-preview.2",
   "private": true,
   "type": "module",
-  "description": "DSH Crew 的本机安装与启动器，Mac 发布预览版",
+  "description": "DSH Crew 的本机安装与启动器，提供 Mac 和 Windows 预览版",
   "license": "MIT",
-  "scripts": { "build": "python3 packaging/build.py" },
-  "engines": { "node": ">=24" }
+  "scripts": {
+    "build": "python3 packaging/build.py"
+  },
+  "engines": {
+    "node": ">=24"
+  }
 }

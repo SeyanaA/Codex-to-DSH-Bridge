@@ -1,0 +1,16 @@
+{
+  "name": "codex-dsh-bridge-web-profile",
+  "private": true,
+  "dependencies": {
+    "@zseven-w/dsh-crew": "0.1.0-rc.14"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "@zseven-w/dsh-crew"
+      ]
+    }
+  }
+}

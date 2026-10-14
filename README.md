@@ -1,66 +1,68 @@
 # Codex-to-DSH Bridge
 
-一个"安装和启动小助手"：把 DeepSeek 的 Crew 功能打包好，装进你已有的 DSH 环境，并帮 Codex 和它接上线。当前版本 0.1.0-preview.1，属于预览版。
+让 Codex 通过 MCP 将任务交给 DSH 执行，在 DSH Web 查看任务会话、工具过程和生成文件。Codex 负责派发、读取产物和验收。
 
-## 它能帮你做什么
+这是第三方安装与启动封装。DSH 来自 DeepSeek，DSH Crew 是 ZSeven-W 开发的第三方插件。
 
-你照常向 Codex 提需求。碰到适合单独做的任务时，Codex 可以通过 MCP（两个工具之间约定好的传话方式）把它交给 DeepSeek 去做。你在 DSH 的网页界面里，从 Crew 面板看到这些任务的进展；Codex 之后取回结果再检查一遍。网页默认地址是 <http://127.0.0.1:3080>，只允许在自己这台电脑上打开。
+## 下载
 
-如果某个任务需要你补充信息，它会停下来等你（状态显示为 needs_input），你补完再重新派发即可。
+| 平台 | 版本 | 安装包 |
+| --- | --- | --- |
+| Windows x64 | 0.1.0-preview.2 | [下载 EXE 安装器](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases/tag/v0.1.0-preview.2) |
+| macOS | 0.1.0-preview.1 | [下载 Mac 预览版](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases/tag/v0.1.0-preview.1) |
 
-## 开始前需要准备什么
+两个版本都是预览版。Windows 安装包尚未数字签名；Mac 应用尚未 Apple 公证。各版本的运行依赖和验证范围见下文。
 
-这个程序只是封装，本身不带全部依赖，请先装好：
+## Windows：安装与使用
 
-- Node.js 24 或更新版本
-- DSH CLI（DeepSeek 的命令行工具）
-- pnpm（DSH 安装插件时用到的下载工具）
-- Codex
+Windows 0.1.0-preview.2 安装包包含 Node.js 24.19.0、DSH 0.2.1-alpha.3 和原版 DSH Crew 0.1.0-rc.14。无需先装 Node/npm/pnpm；请自行安装 Codex，并准备模型账号或 API Key。
 
-还没安装依赖的话，可从 [Node.js 官网](https://nodejs.org/en/download)下载安装，再参考 [DSH 官方说明](https://github.com/deepseek-ai/deepseek-harness)和 [pnpm 安装说明](https://pnpm.io/installation)。先在 DSH 中配好你的 DeepSeek 模型，再使用本启动器。
+1. 下载 Release 中的 `windows-x64-setup.exe`，双击安装。默认装到当前用户目录，无需管理员权限。
+2. 安装完成后重新打开 Codex。安装器会注册 `dsh-crew` MCP，并备份已有配置；遇到其他来源的同名配置会提示冲突。
+3. 从开始菜单 **Codex-to-DSH Bridge → 2 启动 DSH Web** 打开网页，并配置自己的模型凭据。
+4. 在 Codex 指定任务、独立工作目录、输出文件名和验收条件。例如：
 
-缺少什么它会直接告诉你，不会偷偷升级你现有的 DSH。你不需要往这个程序里填 API key，模型凭据仍然由你现有的 DSH 配置管理。
+> 请通过 DSH 在指定工作目录生成中文产品需求草案，保存为需求草案.md。使用标准模式，只新建这份文件。完成后读取并检查内容，我会在 DSH Web 查看过程。
 
-## 下载和安装
+DSH Web 默认地址为 <http://127.0.0.1:3080>。新版需要本地访问令牌，请通过快捷方式“启动 DSH Web”或“打开网页”进入。API Key 由 DSH 保存，不要提交到 GitHub。
 
-到 Releases 页面下载：<https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases>
+更多说明：[Windows 使用指南](docs/windows-preview.2-usage.md) · [安装与真实 MCP 生成验证记录](docs/windows-preview.2-check.json) · [SHA256 校验值](docs/windows-preview.2-SHA256SUMS.txt)
 
-- Mac：提供 DMG 安装包，内含安装/配置、启动、打开网页、停止本程序自己的服务、诊断这几个入口。
-- Windows：提供本地 EXE 安装器和快捷方式，但这一轮不发布 Windows 二进制。
+### 已验证范围
 
-Mac 安装顺序：
+在 Windows 本机隔离用户数据和包含中文、空格的安装路径下，完成了静默安装、MCP 注册与协议、DSH 真实任务生成文件、卸载保留凭据和会话、同名 MCP 冲突保护。此前也已通过 Codex 注册的 MCP 派发生成任务并在 DSH Web 查看会话。
 
-1. 打开 DMG，把应用拖进“应用程序”，然后从“应用程序”打开它。不要直接在 DMG 内配置，否则 Codex 会记住临时位置。
-2. 点“安装与配置”，等待终端窗口提示完成。这一步会联网下载插件依赖。
+安装器交互向导及快捷方式/注册表分支已编译，但隔离安装测试使用 TESTMODE，未执行这些分支。没有覆盖全新 Windows 虚拟机、ARM64、Pro 模型、大并发及全部插件。DSH 为 alpha；网页续聊旧模型会话可能需要重新选择模型。
+
+### 从源码构建 Windows 安装器
+
+Windows 版可重建源码位于 [release-build/windows-preview.2](release-build/windows-preview.2)，入口及固定版本依赖见 [构建说明](release-build/windows-preview.2/BUILDING.md)。二进制运行时与生成的安装器放在 Release 附件中。
+
+## macOS：原有 0.1.0-preview.1
+
+Mac 预览版使用仓库根目录的 `scripts` 和 `packaging`。需要预先安装 Node.js 24+、DSH CLI 和 pnpm，并先在 DSH 配好模型。Windows preview.2 的自带运行时方案不适用于此 Mac 包。
+
+1. 打开 DMG，把应用拖进“应用程序”，再从“应用程序”打开。不要直接在 DMG 内配置。
+2. 点“安装与配置”，等待终端提示完成；这一步联网下载插件依赖。
 3. 完全退出并重新打开 Codex，再点“启动 DSH Web”。
-4. 照常在 Codex 中提任务，也可以明确说“把文档部分交给 DeepSeek”。
+4. 在 Codex 提供任务，也可明确说“把文档部分交给 DeepSeek”。
 
-Mac 首次打开如果提示来源不受信任，请到系统设置的“隐私与安全性”里检查并允许打开。当前应用没有 Apple 公证。应用里点操作会打开终端窗口，完成后可以关掉窗口。
+首次打开若提示来源不受信任，请在系统设置“隐私与安全性”检查来源并允许打开。应用操作会打开终端窗口。Mac 版本的历史发布说明和验证状态保留在 preview.1 Release 中；本次 Windows 验证不代表 Mac 回归测试。
 
-Windows 实机测试：运行本地 EXE，安装到默认位置；从开始菜单打开“1 安装与配置”，完成后重启 Codex，再打开“2 启动 DSH Web”。桌面快捷方式用于之后的启动。停止服务和诊断也在开始菜单里。
+## 协作边界
 
-详细步骤和可填写的结果表见 [Windows 使用与测试指南](docs/windows-usage-test.md)；已有的封装检查结果见 [Windows 检查记录](docs/windows-package-check.md)。
+- Codex 使用 `dsh_spawn_worker` 派发，随后通过 `dsh_worker_status` 与 `dsh_worker_result` 读取结果。派发成功不代表任务完成，应检查实际产物。
+- 先准备独立工作目录；Crew 不保证自动创建 git worktree，也不会自动合并改动。
+- `needs_input` 表示任务需要补充信息；按上游约定补充后重新派发。
+- DSH Web 与 DSH Desktop 会话不自动同步；Codex 的完整聊天历史也不会自动复制过去。
+- 停止命令只控制此启动器管理的服务；端口被其他服务占用时会报告错误。
 
-安装会把 Crew 插件装到 DSH 的 web 配置里，给 Codex 增加连接配置和委派规则。改配置前会备份，其他连接保留；发现冲突就提示你处理。已有 DSH Web 运行时，安装插件不会替它重启；需要你自行在合适时机重启，插件才会生效。
+## 反馈与上游
 
-## 日常怎么用
+通过“诊断”获取错误信息，参考[反馈模板](support/problem-report-template.md)提交 [Issue](https://github.com/SeyanaA/Codex-to-DSH-Bridge/issues)。请勿附 API Key、访问令牌或私人会话。
 
-启动时会先看 3080 端口：如果能确认是 Crew 的网页，就直接复用；被别的服务占用，它会报错，不会自动去关掉别人的服务。Mac 上由这个启动器单独管理它拉起的服务，停止也只针对它自己创建的那个。日志会过滤掉访问令牌。
+- [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
+- [DSH Crew](https://github.com/ZSeven-W/dsh-crew)
+- [第三方声明](THIRD_PARTY_NOTICES.md)
 
-有几点要留意：
-
-- Crew 里的会话和 DSH Desktop 的会话是两回事，换端口也不能把网页会话搬到桌面端。
-- 能不能在同一个原生聊天里接着聊，取决于上游怎么实现，这里不做承诺。
-- 它不会自动创建 git worktree（独立的工作目录副本）。交给 DeepSeek 的任务，最好先由 Codex 准备好单独的工作区；改动也不会自动合并。
-
-## 还没验证的部分
-
-说实话：目前只是完成了封装，功能验收还没做，构建成功不等于用起来一定没问题。Windows 版本是从 Mac 上交叉打包的，没有在 Windows 机器上真正运行过。请把它当作"已封装、待你实机测试"的预览版，不要当成测过的稳定版。
-
-## 遇到问题怎么反馈
-
-点应用中的“诊断”，把错误信息写进[问题反馈模板](support/problem-report-template.md)，再到 [Issues](https://github.com/SeyanaA/Codex-to-DSH-Bridge/issues) 提交。不要附上 API key 或登录链接。
-
-## 关于这个项目和上游
-
-这是第三方封装，不是官方 DSH Desktop，也没有自行重写 DeepSeek Agent。底层用的是上游项目 @zseven-w/dsh-crew 0.1.0-rc.14（MIT 许可）：<https://github.com/ZSeven-W/dsh-crew>。本项目与旧的 codex-dsh-bridge 是两个不同项目，仓库里不包含旧桥接器，也不包含你的模型配置、凭据、会话或测试网站。
+本项目不是官方 DSH Desktop，也未重写 DeepSeek Agent。原版 Crew 源码和许可证保留在 Windows 源码目录中。

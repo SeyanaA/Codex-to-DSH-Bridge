@@ -1,0 +1,8 @@
+# Generated Windows runtime and installer output
+app/runtime/node.exe
+app/runtime/NODE-LICENSE.txt
+app/runtime/dsh/node_modules/
+app/payload/template/web/node_modules/
+app/bridge-runtime.tar.gz
+*.exe
+*.zip

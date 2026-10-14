@@ -1,0 +1,1 @@
+Call the `dsh_worker_status` tool and present the result as one compact table: job id, tier/effort, status, progress, tokens, task summary. If there are no jobs, say so in one line. Reply in the language the user is writing in. Do nothing else.

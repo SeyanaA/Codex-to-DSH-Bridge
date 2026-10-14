@@ -1,0 +1,16 @@
+{
+  "product": "Codex-to-DSH Bridge",
+  "version": "0.1.0-preview.2",
+  "platform": "windows-x64",
+  "node": "24.19.0",
+  "dsh": "0.2.1-alpha.3",
+  "crew": "0.1.0-rc.14",
+  "profile": "offline",
+  "source": "https://github.com/ZSeven-W/dsh-crew",
+  "archive": {
+    "file": "bridge-runtime.tar.gz",
+    "sha256": "23cad2f1f0dad3d0bf60f6d02d6b67542e4ba1e4fa1c90c79f8b928b253e3035",
+    "files": 67345,
+    "uncompressedBytes": 751642721
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "package": "Codex-to-DSH-Bridge-0.1.0-preview.1-windows-setup.exe",
+  "sha256": "1c4f9d50ae8fd3cafdbea2002497af4f5b53cbccdddee04469704a56ae355e18",
+  "checks": [
+    {
+      "check": "PE executable header",
+      "passed": true,
+      "machine": "0x14c"
+    },
+    {
+      "check": "payload package.json",
+      "passed": true
+    },
+    {
+      "check": "payload README.md",
+      "passed": true
+    },
+    {
+      "check": "payload LICENSE",
+      "passed": true
+    },
+    {
+      "check": "payload THIRD_PARTY_NOTICES.md",
+      "passed": true
+    },
+    {
+      "check": "payload scripts/common.mjs",
+      "passed": true
+    },
+    {
+      "check": "payload scripts/launcher.mjs",
+      "passed": true
+    },
+    {
+      "check": "payload scripts/host.mjs",
+      "passed": true
+    },
+    {
+      "check": "payload scripts/mcp.mjs",
+      "passed": true
+    },
+    {
+      "check": "payload vendor/crew/lib/server.mjs",
+      "passed": true
+    },
+    {
+      "check": "payload vendor/crew/lib/client.js",
+      "passed": true
+    },
+    {
+      "check": "payload vendor/crew/cordis.patch.yml",
+      "passed": true
+    },
+    {
+      "check": "payload vendor/crew/worker.cordis.yml",
+      "passed": true
+    },
+    {
+      "check": "payload vendor/crew/LICENSE",
+      "passed": true
+    },
+    {
+      "check": "payload vendor/zseven-w-dsh-crew-0.1.0-rc.14.tgz",
+      "passed": true
+    },
+    {
+      "check": "payload support/problem-report-template.md",
+      "passed": true
+    },
+    {
+      "check": "Windows command entry",
+      "passed": true
+    },
+    {
+      "check": "JS syntax common.mjs",
+      "passed": true
+    },
+    {
+      "check": "JS syntax launcher.mjs",
+      "passed": true
+    },
+    {
+      "check": "JS syntax host.mjs",
+      "passed": true
+    },
+    {
+      "check": "JS syntax mcp.mjs",
+      "passed": true
+    }
+  ],
+  "failed": 0,
+  "windows_execution": "not run; no Windows runtime detected"
+}

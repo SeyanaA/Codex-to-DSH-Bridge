@@ -1,0 +1,11 @@
+*.mjs text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.nsi text eol=lf
+*.tgz -text
+# Keep vendored library bytes intact; its upstream whitespace is intentional.
+vendor/yaml/** -whitespace

@@ -1,68 +1,70 @@
 # Codex-to-DSH Bridge
 
-让 Codex 通过 MCP 将任务交给 DSH 执行，在 DSH Web 查看任务会话、工具过程和生成文件。Codex 负责派发、读取产物和验收。
+让 Codex 把合适的子任务交给 DeepSeek，**直接在 DSH Desktop 里看到过程，并在同一条对话里继续工作**。Codex 取回结果后负责检查和整合。
 
-这是第三方安装与启动封装。DSH 来自 DeepSeek，DSH Crew 是 ZSeven-W 开发的第三方插件。
+当前版本：**0.2.0-preview.1**。提供 Mac 通用 DMG 和 Windows x64 EXE。这是 DSH Crew 的本地适配与启动器，不是 DeepSeek 官方产品，也不包含 DSH Desktop 应用本身。
 
-## 下载
+## 这次最重要的变化
 
-| 平台 | 版本 | 安装包 |
-| --- | --- | --- |
-| Windows x64 | 0.1.0-preview.2 | [下载 EXE 安装器](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases/tag/v0.1.0-preview.2) |
-| macOS | 0.1.0-preview.1 | [下载 Mac 预览版](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases/tag/v0.1.0-preview.1) |
+- 同一个 Codex 会话首次委派时创建一个 DSH 会话，后续任务接着聊。
+- 不同 Codex 会话各自对应不同 DSH 会话，使用同一个目录也不会混在一起。
+- 每轮任务有独立编号，Codex 可以查状态、取结果和取消。
+- 固定使用 **DeepSeek-V41-Flash，MAX**，实际编号为 `deepseek-official/deepseek-flash`，不会自动切到 V4 或 Pro。
+- Mac 和 Windows 共用同一套 Desktop 接入与续聊代码。旧 Windows 离线 Web 环境保留为单独的兼容入口。
 
-两个版本都是预览版。Windows 安装包尚未数字签名；Mac 应用尚未 Apple 公证。各版本的运行依赖和验证范围见下文。
+完整变化见 [发布说明](RELEASE_NOTES.md)，初稿由 DSH 编写，Codex 审核。
 
-## Windows：安装与使用
+## 安装前
 
-Windows 0.1.0-preview.2 安装包包含 Node.js 24.19.0、DSH 0.2.1-alpha.3 和原版 DSH Crew 0.1.0-rc.14。无需先装 Node/npm/pnpm；请自行安装 Codex，并准备模型账号或 API Key。
+1. 安装 Codex 和 [DeepSeek Harness Desktop](https://github.com/deepseek-ai/deepseek-harness)。先打开一次 Desktop，完成模型配置和初始化，再从应用菜单完全退出。
+2. Mac 需要 Node.js 24 或更新版本；Windows 包内已带 Node.js。
+3. 配置时若 Desktop 尚未安装 Crew，会尝试通过 Desktop 自带的官方命令安装固定的 `@zseven-w/dsh-crew@0.1.0-rc.14`，首次可能联网。若该版本没有对应命令，请先在 Desktop 插件页安装并启用 Crew，完全退出后重试。
 
-1. 下载 Release 中的 `windows-x64-setup.exe`，双击安装。默认装到当前用户目录，无需管理员权限。
-2. 安装完成后重新打开 Codex。安装器会注册 `dsh-crew` MCP，并备份已有配置；遇到其他来源的同名配置会提示冲突。
-3. 从开始菜单 **Codex-to-DSH Bridge → 2 启动 DSH Web** 打开网页，并配置自己的模型凭据。
-4. 在 Codex 指定任务、独立工作目录、输出文件名和验收条件。例如：
+安装前会备份配置，保留其他插件和 MCP。Desktop 使用自己已有的模型配置，旧 Web 的账号和历史不会自动合并到 Desktop。
 
-> 请通过 DSH 在指定工作目录生成中文产品需求草案，保存为需求草案.md。使用标准模式，只新建这份文件。完成后读取并检查内容，我会在 DSH Web 查看过程。
+## Mac
 
-DSH Web 默认地址为 <http://127.0.0.1:3080>。新版需要本地访问令牌，请通过快捷方式“启动 DSH Web”或“打开网页”进入。API Key 由 DSH 保存，不要提交到 GitHub。
+从 [Releases](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases) 下载 DMG，把应用拖进“应用程序”，从应用程序打开，点击 **安装与配置**。完成后重新打开 Desktop 和 Codex。
 
-更多说明：[Windows 使用指南](docs/windows-preview.2-usage.md) · [安装与真实 MCP 生成验证记录](docs/windows-preview.2-check.json) · [SHA256 校验值](docs/windows-preview.2-SHA256SUMS.txt)
+以后使用 **打开 DSH Desktop**。应用未经 Apple 公证，使用本机临时签名；若系统阻止打开，请按 macOS 正常应用授权流程操作。启动器含 arm64 与 x86_64，Intel Mac 未实机验证。
 
-### 已验证范围
+## Windows
 
-在 Windows 本机隔离用户数据和包含中文、空格的安装路径下，完成了静默安装、MCP 注册与协议、DSH 真实任务生成文件、卸载保留凭据和会话、同名 MCP 冲突保护。此前也已通过 Codex 注册的 MCP 派发生成任务并在 DSH Web 查看会话。
+下载 `windows-x64-setup.exe`，安装到原目录或空目录。它保留旧包带的 Node.js 和 Web 离线环境；Desktop 功能仍需要你自己安装 DSH Desktop。
 
-安装器交互向导及快捷方式/注册表分支已编译，但隔离安装测试使用 TESTMODE，未执行这些分支。没有覆盖全新 Windows 虚拟机、ARM64、Pro 模型、大并发及全部插件。DSH 为 alpha；网页续聊旧模型会话可能需要重新选择模型。
+开始菜单 **1 安装与配置 → 2 打开 DSH Desktop**。旧网页用户可用 **旧 Web 兼容入口**；首次注册旧 Web 时运行 `run.cmd web-install`。这是明确选择，不会在 Desktop 连接失败时自动切换。旧 Web 保持原版每任务新会话的行为；需要同一会话续聊请使用 Desktop。两种入口均锁定 V41 Flash / MAX。
 
-### 从源码构建 Windows 安装器
+Windows 安装包在 Mac 上构建并检查内容，**新版安装、升级、卸载和模型任务仍待 Windows 实机验收**。见 [Windows 使用与测试](docs/windows-desktop-test.md)。
 
-Windows 版可重建源码位于 [release-build/windows-preview.2](release-build/windows-preview.2)，入口及固定版本依赖见 [构建说明](release-build/windows-preview.2/BUILDING.md)。二进制运行时与生成的安装器放在 Release 附件中。
+## 日常使用
 
-## macOS：原有 0.1.0-preview.1
+直接在 Codex 提任务，例如：
 
-Mac 预览版使用仓库根目录的 `scripts` 和 `packaging`。需要预先安装 Node.js 24+、DSH CLI 和 pnpm，并先在 DSH 配好模型。Windows preview.2 的自带运行时方案不适用于此 Mac 包。
+> 把文档部分交给 DSH，在当前会话对应的 Desktop 对话中继续，完成后你检查再整合。
 
-1. 打开 DMG，把应用拖进“应用程序”，再从“应用程序”打开。不要直接在 DMG 内配置。
-2. 点“安装与配置”，等待终端提示完成；这一步联网下载插件依赖。
-3. 完全退出并重新打开 Codex，再点“启动 DSH Web”。
-4. 在 Codex 提供任务，也可明确说“把文档部分交给 DeepSeek”。
+Codex 使用 `dsh_desktop_crew`，把当前 `CODEX_THREAD_ID` 原样作为 `conversation_id`，并保持相同工作目录。用户无需手工填编号或复制消息。
 
-首次打开若提示来源不受信任，请在系统设置“隐私与安全性”检查来源并允许打开。应用操作会打开终端窗口。Mac 版本的历史发布说明和验证状态保留在 preview.1 Release 中；本次 Windows 验证不代表 Mac 回归测试。
+默认目录是 `~/.codex-to-dsh-bridge/desktop-smoke-workspace`。这是项目分组，不是所有 Codex 对话共用的一条聊天。安装时用 `--workspace` 可沿用已有目录；同一个会话换目录会产生新的绑定。
 
-## 协作边界
+任务串行执行。写代码前应准备独立目录或 Git worktree；Codex 负责验收和整合，程序不会自动创建 worktree 或合并修改。你也能在 Desktop 直接发消息，但请避免同时给同一会话下冲突指令。
 
-- Codex 使用 `dsh_spawn_worker` 派发，随后通过 `dsh_worker_status` 与 `dsh_worker_result` 读取结果。派发成功不代表任务完成，应检查实际产物。
-- 先准备独立工作目录；Crew 不保证自动创建 git worktree，也不会自动合并改动。
-- `needs_input` 表示任务需要补充信息；按上游约定补充后重新派发。
-- DSH Web 与 DSH Desktop 会话不自动同步；Codex 的完整聊天历史也不会自动复制过去。
-- 停止命令只控制此启动器管理的服务；端口被其他服务占用时会报告错误。
+## 为什么原 Crew 组件显示关闭
 
-## 反馈与上游
+原版 Crew 每次派发都会新建会话。为了支持续聊，本程序保留 Crew 安装与页面，关闭原后台组件，换成 `codex-desktop-session-hub`。**这是替换后台实现，不是卸载 Crew 或停止委派。**新组件保存在 Desktop 的配置目录中，不引用开发者机器上的路径。
 
-通过“诊断”获取错误信息，参考[反馈模板](support/problem-report-template.md)提交 [Issue](https://github.com/SeyanaA/Codex-to-DSH-Bridge/issues)。请勿附 API Key、访问令牌或私人会话。
+## 诊断、停止和回退
 
-- [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
-- [DSH Crew](https://github.com/ZSeven-W/dsh-crew)
-- [第三方声明](THIRD_PARTY_NOTICES.md)
+- “诊断”检查路径、配置、Crew 和接口；不会调用模型，也不会把失败项目显示为成功。
+- 本程序不会替你退出 Desktop。退出请用 Desktop 菜单；关闭窗口可能只是隐藏。
+- 卸载保留 Desktop 组件、模型凭据、会话和备份。Windows 卸载仍校验安装目录归属。
+- 手工接入过同名 MCP 时会保留并提示冲突；确认迁移后使用 `install --adopt-existing`。
 
-本项目不是官方 DSH Desktop，也未重写 DeepSeek Agent。原版 Crew 源码和许可证保留在 Windows 源码目录中。
+高级路径设置、源码构建和回退见 [安装说明](docs/desktop-installation.md)。
+
+## 当前限制
+
+Mac 已实测续聊、MCP 重连、Desktop 重启后恢复，以及用户实际分支中的 Markdown 摘要交接。摘要由 Codex 根据分支点生成；**任意未来分支的自动识别和摘要自动生成尚未完成**。
+
+Desktop 的消息不会主动唤醒已结束的 Codex 会话。Desktop 重启后能恢复聊天历史，但旧任务编号的内存记录可能丢失，应及时保存结果。缓存取决于请求前缀和服务端状态，不保证每次命中或固定节省比例。
+
+上游：[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [DSH Crew](https://github.com/ZSeven-W/dsh-crew)。问题反馈见 [模板](support/problem-report-template.md)，请勿附带 API Key 或登录令牌。

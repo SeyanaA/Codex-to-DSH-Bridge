@@ -16,10 +16,10 @@
     title.frame = NSMakeRect(32, 335, 490, 36);
     [self.window.contentView addSubview:title];
     NSTextField *description = [NSTextField wrappingLabelWithString:
-        @"把适合的任务交给 DeepSeek，在 DSH 网页里查看进度。\n预览版 · 待实机测试 · 默认端口 3080"];
+        @"把任务交给 DeepSeek，在 DSH Desktop 里接着聊。\n0.2.0 预览版 · 每个 Codex 对话对应一个 Desktop 对话"];
     description.frame = NSMakeRect(32, 266, 490, 58);
     [self.window.contentView addSubview:description];
-    NSArray *titles = @[@"1. 安装与配置", @"2. 启动 DSH Web", @"打开网页", @"停止本程序的服务", @"诊断", @"使用说明"];
+    NSArray *titles = @[@"1. 安装与配置", @"2. 打开 DSH Desktop", @"打开 Desktop", @"服务说明", @"诊断", @"使用说明"];
     for (NSInteger i = 0; i < titles.count; i++) {
         NSButton *button = [NSButton buttonWithTitle:titles[i] target:self action:@selector(performAction:)];
         button.tag = i;
@@ -28,7 +28,7 @@
         [self.window.contentView addSubview:button];
     }
     NSTextField *foot = [NSTextField wrappingLabelWithString:
-        @"需要事先安装 Node.js 24+、DSH CLI、pnpm 和 Codex。\n操作会打开终端窗口；不会替你关闭已有的 DSH 服务。"];
+        @"需要 DSH Desktop、Codex 和 Node.js 24+。\n首次 Crew 安装可能联网；操作不会替你退出 Desktop。"];
     foot.font = [NSFont systemFontOfSize:12];
     foot.textColor = [NSColor secondaryLabelColor];
     foot.frame = NSMakeRect(32, 20, 496, 52);

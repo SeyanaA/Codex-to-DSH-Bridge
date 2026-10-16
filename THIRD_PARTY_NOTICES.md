@@ -19,3 +19,11 @@ Crew 的原版源码与 MIT 许可保存在 `release-build/windows-preview.2/app
 - npm SHA-1：63867061c5beca31e9663e8cce0a1a44043f0115
 
 Mac preview.1 要求用户分别安装 DSH、Codex、Node.js 和 pnpm，不包含这些运行时。
+
+## Local Desktop session adaptation
+
+The session Hub template is derived from @zseven-w/dsh-crew 0.1.0-rc.14 (ZSeven-W, MIT). Changes add persistent conversation mapping, resume/adoption, scoped event collection, cache usage and fixed V41 Flash/MAX delegation. The installed upstream package is not overwritten.
+
+## yaml
+
+The bundled yaml JavaScript package is MIT licensed, copyright Eemeli Aro. Its license is included at vendor/yaml/LICENSE. It is used to preserve Desktop plugin configuration values during installation.

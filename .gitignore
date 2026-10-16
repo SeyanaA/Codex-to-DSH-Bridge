@@ -5,3 +5,11 @@ node_modules/
 *.log
 /vendor/crew/
 /vendor/*.tgz
+/extensions/crew-session-hub.mjs
+__pycache__/
+
+!vendor/zseven-w-dsh-crew-0.1.0-rc.14.tgz
+!vendor/yaml/dist/
+!vendor/yaml/dist/**
+!vendor/yaml/browser/dist/
+!vendor/yaml/browser/dist/**

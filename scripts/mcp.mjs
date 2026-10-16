@@ -1,18 +1,11 @@
-import { spawn } from 'node:child_process';
-import path from 'node:path';
+// Explicit legacy Web entry. Desktop is never silently substituted.
 import { ensureStarted } from './launcher.mjs';
-import { ROOT, BASE, redact } from './common.mjs';
-
+import { BASE, CONFIG, HOME, readJSON } from './common.mjs';
+import path from 'node:path';
 try {
   await ensureStarted();
-  const child = spawn(process.execPath, [path.join(ROOT, 'vendor', 'crew', 'lib', 'server.mjs')], {
-    env: { ...process.env, DSHPLUGIN_CREW_HUB: BASE }, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true,
-  });
-  process.stdin.pipe(child.stdin);
-  child.stdout.pipe(process.stdout);
-  child.stderr.on('data', data => process.stderr.write(redact(data)));
-  child.on('error', error => { console.error(redact(error.message)); process.exit(1); });
-  child.on('exit', code => process.exit(code || 0));
-  const stop = () => child.kill('SIGTERM');
-  process.on('SIGTERM', stop); process.on('SIGINT', stop); process.stdin.on('end', stop);
-} catch (error) { console.error(redact(error.message)); process.exit(1); }
+  process.env.DSH_BRIDGE_SURFACE = 'legacy-web';
+  process.env.DSHPLUGIN_CREW_HUB = BASE;
+  process.env.DSH_HOME = readJSON(CONFIG)?.dshHome || path.join(HOME, '.dsh');
+  await import('./desktop-mcp.mjs');
+} catch (error) { console.error(error.message); process.exitCode = 1; }

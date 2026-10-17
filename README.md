@@ -67,4 +67,13 @@ Mac 已实测续聊、MCP 重连、Desktop 重启后恢复，以及用户实际�
 
 Desktop 的消息不会主动唤醒已结束的 Codex 会话。Desktop 重启后能恢复聊天历史，但旧任务编号的内存记录可能丢失，应及时保存结果。缓存取决于请求前缀和服务端状态，不保证每次命中或固定节省比例。
 
-上游：[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [DSH Crew](https://github.com/ZSeven-W/dsh-crew)。问题反馈见 [模板](support/problem-report-template.md)，请勿附带 API Key 或登录令牌。
+## 协作署名
+
+本项目由 [SeyanaA](https://github.com/SeyanaA) 发起并维护，使用 AI 协作完成开发：
+
+- **OpenAI Codex**：参与方案设计、桥接功能开发、Mac 与 Windows 打包适配、测试验证、代码审核和发布。
+- **DeepSeek / DSH Crew**：执行委派的独立子任务，参与文档与发布说明初稿；成果由 Codex 检查和整合。
+
+感谢上游：[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [DSH Crew](https://github.com/ZSeven-W/dsh-crew)。第三方代码与许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+问题反馈见 [模板](support/problem-report-template.md)，请勿附带 API Key 或登录令牌。

@@ -71,7 +71,7 @@ Desktop 的消息不会主动唤醒已结束的 Codex 会话。Desktop 重启后
 
 本项目由 [SeyanaA](https://github.com/SeyanaA) 发起并维护，使用 AI 协作完成开发：
 
-- **OpenAI Codex**：参与方案设计、桥接功能开发、Mac 与 Windows 打包适配、测试验证、代码审核和发布。
+- **[OpenAI Codex](https://github.com/codex)**：参与方案设计、桥接功能开发、Mac 与 Windows 打包适配、测试验证、代码审核和发布。
 - **DeepSeek / DSH Crew**：执行委派的独立子任务，参与文档与发布说明初稿；成果由 Codex 检查和整合。
 
 感谢上游：[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [DSH Crew](https://github.com/ZSeven-W/dsh-crew)。第三方代码与许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

@@ -2,7 +2,9 @@
 
 让 Codex 把合适的子任务交给 DeepSeek，**直接在 DSH Desktop 里看到过程，并在同一条对话里继续工作**。Codex 取回结果后负责检查和整合。
 
-源码开发版本：**0.3.0-preview.1**。Mac 已本机验证并提供本地预览包；Windows 源码与封装入口同步，尚未构建本轮安装包。GitHub 已发布安装包仍是 **0.2.0-preview.1**。这是内置 DSH Crew 衍生通信代码的本地桥接器与启动器，不是 DeepSeek 官方产品，也不包含 DSH Desktop 应用本身。
+当前 Mac 版本：**[0.3.0-preview.1](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases/tag/v0.3.0-preview.1)**。本次发布 Mac 通用 DMG 和源码；Windows 安装包仍使用 **0.2.0-preview.1**，本轮没有新 Windows 包。
+
+**部分 MCP 通信、任务执行和辅助功能集成自 [DSH Crew](https://github.com/ZSeven-W/dsh-crew) 0.1.0-rc.14（作者 ZSeven-W，MIT 许可）**，保留上游版权、源码和许可。本项目在此基础上增加内置安装、Desktop 独立通信入口、同会话绑定与恢复、模型限制等改造，不将上游功能标为原创。它不是 DeepSeek 官方产品，也不包含 DSH Desktop 应用本身。
 
 ## 这次最重要的变化
 
@@ -12,7 +14,7 @@
 - 固定使用 **DeepSeek-V41-Flash，MAX**，实际编号为 `deepseek-official/deepseek-flash`，不会自动切到 V4 或 Pro。
 - Mac 和 Windows 共用同一套 Desktop 接入与续聊代码。旧 Windows 离线 Web 环境保留为单独的兼容入口。
 
-这次内置通信改造见 [实施与验证记录](docs/bundled-desktop-runtime.md)。上一版发布说明见 [发布说明](RELEASE_NOTES.md)，初稿由 DSH 编写，Codex 审核。
+这次内置通信改造见 [实施与验证记录](docs/bundled-desktop-runtime.md)。本版变化见 [发布说明](RELEASE_NOTES.md)，初稿由 DSH 编写，Codex 审核。
 
 ## 安装前
 
@@ -24,17 +26,17 @@
 
 ## Mac
 
-从 [Releases](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases) 下载 DMG，把应用拖进“应用程序”，从应用程序打开，点击 **安装与配置**。完成后重新打开 Desktop 和 Codex。
+从 [Mac 下载页](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases/tag/v0.3.0-preview.1) 下载 DMG，把应用拖进“应用程序”，从应用程序打开，点击 **安装与配置**。完成后重新打开 Desktop 和 Codex。
 
 以后使用 **打开 DSH Desktop**。应用未经 Apple 公证，使用本机临时签名；若系统阻止打开，请按 macOS 正常应用授权流程操作。启动器含 arm64 与 x86_64，Intel Mac 未实机验证。
 
 ## Windows
 
-下载 `windows-x64-setup.exe`，安装到原目录或空目录。它保留旧包带的 Node.js 和 Web 离线环境；Desktop 功能仍需要你自己安装 DSH Desktop。
+Windows 当前仍使用 [0.2.0-preview.1 下载页](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases/tag/v0.2.0-preview.1) 的 `windows-x64-setup.exe`，该旧包尚不包含 0.3 的内置通信改造。安装到原目录或空目录。它保留旧包带的 Node.js 和 Web 离线环境；Desktop 功能仍需要你自己安装 DSH Desktop。
 
 开始菜单 **1 安装与配置 → 2 打开 DSH Desktop**。旧网页用户可用 **旧 Web 兼容入口**；首次注册旧 Web 时运行 `run.cmd web-install`。这是明确选择，不会在 Desktop 连接失败时自动切换。旧 Web 保持原版每任务新会话的行为；需要同一会话续聊请使用 Desktop。两种入口均锁定 V41 Flash / MAX。
 
-Windows 安装包在 Mac 上构建并检查内容，**新版安装、升级、卸载和模型任务仍待 Windows 实机验收**。见 [Windows 使用与测试](docs/windows-desktop-test.md)。
+0.2 的 Windows 安装包曾在 Mac 上构建并检查内容；0.3 已同步共用代码，但未构建 Windows 包。**Windows 安装、升级、卸载和模型任务仍待实机验收**。见 [Windows 下一版测试清单](docs/windows-desktop-test.md)。
 
 ## 日常使用
 
@@ -50,7 +52,7 @@ Codex 使用 `dsh_desktop_crew`，把当前 `CODEX_THREAD_ID` 原样作为 `conv
 
 ## 是否需要另装 DSH Crew
 
-本版不需要。安装包内置固定版本 Crew rc.14 的源码及许可，安装到 Desktop 配置目录下的 `codex-bridge`，不从用户另装的 Crew 插件目录读取代码，也不会自动启用原 Crew 插件。
+Mac 0.3 不需要；Windows 0.2 旧包仍使用原安装流程。Mac 新安装包内置固定版本 Crew rc.14 的源码及许可，安装到 Desktop 配置目录下的 `codex-bridge`，不从用户另装的 Crew 插件目录读取代码，也不会自动启用原 Crew 插件。
 
 会话组件由 Desktop 自身加载，任务仍在 Desktop 运行和显示。桥接器提供独立的 localhost 通信入口，默认 `19387`，不依赖 Desktop 是否启动 Web 服务。旧的 `dsh-crew-hub` 保持关闭，避免两套后台抢同一任务。
 

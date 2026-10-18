@@ -1,27 +1,31 @@
-# Codex-to-DSH Bridge 0.2.0-preview.1：Desktop 同一会话续聊
+# Codex-to-DSH Bridge v0.3.0-preview.1：Mac 内置通信版
 
-说明初稿由 DSH Desktop Crew 使用 DeepSeek-V41-Flash、MAX 撰写，Codex 核对并修订。
+说明初稿由 DSH Desktop 中的 DeepSeek-V41-Flash / MAX 撰写，Codex 核对并修订。
 
 ## 这次改了什么
 
-之前 Mac 的 v0.1.0-preview.1 和 Windows 的 v0.1.0-preview.2，主要面向 DSH Web。这次新版本提供 Mac DMG 和 Windows x64 EXE 两种安装包，两边共用同一套逻辑，并优先连接你已经装好的 DSH Desktop。
+**本项目的部分 MCP 通信、任务执行和辅助功能集成自 [DSH Crew](https://github.com/ZSeven-W/dsh-crew) 0.1.0-rc.14，原作者 ZSeven-W，使用 MIT 许可。保留其版权、源码和完整许可；不将上游功能标为本项目原创。** 这是基于 Crew 的开源改造与封装。
 
-会话衔接也做了调整。一个 Codex 会话第一次委派时，会创建一个 DSH 会话；之后这个 Codex 会话继续用同一条 DSH 会话。不同的 Codex 会话彼此分开，不会因为共用目录就混在一起。每轮任务有独立编号，可以按编号读回结果。
+本版把所需通信代码随安装包提供，安装到桥接器自己管理的目录。无需另外安装或启用 Desktop 的 Crew 插件。新增的本机通信入口独立于 Desktop 的 Web 服务；Codex 下发任务后，仍由 DSH Desktop 执行并显示真实对话。
 
-模型方面锁定为你指定的 DeepSeek-V41-Flash 和 MAX，不会自动切成 Pro，也不会自动降低思考等级。
+每个 Codex 对话继续绑定自己的 Desktop 会话，后续任务接着聊。保留 Flash / MAX 模型限制、任务编号、结果回传和配置备份。
 
-原 Crew 后台组件由续聊组件接替，Crew 安装与页面保留。插件页显示原组件关闭，不代表停止委派。新组件保存在 Desktop 的配置目录，不再引用开发者机器路径。
+## 已验证
 
-## 怎么用
+Mac Apple Silicon / DSH Desktop 0.2.1-rc.2：关闭整个 Crew 插件并重启后，两轮短文本任务沿用同一个历史会话，第二轮未重发暗号仍能正确回忆，结果可回传，Desktop 界面可见，两轮工具调用均为 0。16 项自动测试通过。Mac 通用 DMG 的镜像校验、临时签名和双架构检查通过。
 
-安装会备份现有配置。Desktop 模式使用 Desktop 已有的模型配置，旧 Web 的账号和历史不会自动合并过去；不会自动合并代码。默认按串行方式跑任务，Codex 负责验收。
+详见 [实施与验证记录](docs/bundled-desktop-runtime.md)。
 
-目前 Mac 上已经实测过续聊、MCP 重连，以及 DSH Desktop 重启后恢复。也验证了用户实际创建分支后，用 Codex 写 Markdown 摘要做交接，并能在分支中继续。
+## 怎么安装
 
-## 已知限制
+先安装并初始化 DSH Desktop，准备 Node.js 24+。从本页下载 `mac-universal.dmg`，把应用拖到“应用程序”。完全退出 Desktop，打开桥接器，运行“安装与配置”，完成后重新打开 Desktop 和 Codex。旧手工 MCP 注册若提示冲突，可按文档使用 `install --adopt-existing`；配置变更前会备份。
 
-自动识别任意未来分支并自动生成摘要，目前还没有完成。当前由 Codex 根据分支点整理 Markdown 摘要，再交给分支对应的新会话阅读；桥接器尚未自动读取任意分支元数据。
+应用使用临时签名，未经过 Apple 公证。请按 macOS 正常应用授权流程处理系统提示。
 
-Windows 已同步同一套 Desktop 接入与续聊代码，并保留 preview.2 的离线 Web 环境作为显式选择的兼容入口。因为 Windows 无法在 Mac 上实机验收，Windows 的安装和会话端到端流程，还需要你在自己的机器上验证。Mac 通用包在 Intel 芯片上的执行，也还没有实机验证。
+## 发布范围与限制
 
-缓存按请求前缀匹配，不保证每轮都命中，所以这里不写固定的节省百分比。
+本次仅提供 **Mac 通用 DMG、源码包、许可说明、测试记录和校验文件**，不发布新 Windows 安装包。Windows 仍使用 [0.2.0-preview.1](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases/tag/v0.2.0-preview.1)，该旧包尚不包含本轮内置通信改造。Windows 源码与封装入口已调整，实机测试仍待完成；Intel Mac 未实机验证。
+
+自动识别任意分支并生成摘要、从外部主动唤醒 Codex仍未实现。聊天历史由 Desktop 保存，重启后旧 Job 的内存记录可能消失。未来 DSH 服务接口变更仍需兼容性验证；本项目没有重新实现 DSH Agent 引擎。
+
+上游与许可见 [第三方声明](THIRD_PARTY_NOTICES.md)。上一版发布说明保存在 [0.2 历史记录](docs/release-notes-0.2.0-preview.1.md)。

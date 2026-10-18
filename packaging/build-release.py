@@ -70,7 +70,7 @@ read -k 1 '?按任意键结束…'
         command.chmod(0o755)
     info = dict(CFBundleExecutable='BridgeLauncher', CFBundleName='Codex-to-DSH Bridge',
         CFBundleIdentifier='com.seyana.codex-to-dsh-bridge', CFBundlePackageType='APPL',
-        CFBundleShortVersionString='0.2.0', CFBundleVersion='201', LSMinimumSystemVersion='12.0',
+        CFBundleShortVersionString=VERSION.split('-')[0], CFBundleVersion='301', LSMinimumSystemVersion='12.0',
         NSHighResolutionCapable=True, NSHumanReadableCopyright='SeyanaA; Crew © ZSeven-W, MIT')
     (contents / 'Info.plist').write_bytes(plistlib.dumps(info))
     for arch in ['arm64', 'x86_64']:
@@ -128,7 +128,7 @@ if args.platform in ['all', 'windows']:
 
 # The same Desktop files, byte for byte, are used by both packages.
 shared = ['desktop-mcp.mjs', 'desktop-settings.mjs', 'desktop-install.mjs', 'desktop-runtime.mjs',
-          'desktop-launcher.mjs', 'session-proxy.mjs', 'session-id.mjs', 'model-policy.mjs', 'build-session-hub.mjs']
+          'desktop-launcher.mjs', 'session-proxy.mjs', 'session-id.mjs', 'model-policy.mjs', 'build-session-hub.mjs', 'bundled-crew.mjs', 'bridge-transport.mjs']
 parity = {}
 for name in shared:
     values = []

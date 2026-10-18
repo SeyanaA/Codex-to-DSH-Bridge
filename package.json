@@ -1,9 +1,9 @@
 {
   "name": "codex-to-dsh-bridge-launcher",
-  "version": "0.2.0-preview.1",
+  "version": "0.3.0-preview.1",
   "private": true,
   "type": "module",
-  "description": "DSH Crew 的本机安装与启动器，提供 Mac 和 Windows 预览版",
+  "description": "Codex 与 DSH Desktop 的会话桥接器，内置基于 Crew 的通信组件",
   "license": "MIT",
   "scripts": {
     "build": "python3 packaging/build-release.py",

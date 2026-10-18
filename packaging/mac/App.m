@@ -16,7 +16,7 @@
     title.frame = NSMakeRect(32, 335, 490, 36);
     [self.window.contentView addSubview:title];
     NSTextField *description = [NSTextField wrappingLabelWithString:
-        @"把任务交给 DeepSeek，在 DSH Desktop 里接着聊。\n0.2.0 预览版 · 每个 Codex 对话对应一个 Desktop 对话"];
+        @"把任务交给 DeepSeek，在 DSH Desktop 里接着聊。\n0.3.0 预览版 · 内置通信组件，无需另开 Crew 插件"];
     description.frame = NSMakeRect(32, 266, 490, 58);
     [self.window.contentView addSubview:description];
     NSArray *titles = @[@"1. 安装与配置", @"2. 打开 DSH Desktop", @"打开 Desktop", @"服务说明", @"诊断", @"使用说明"];
@@ -28,7 +28,7 @@
         [self.window.contentView addSubview:button];
     }
     NSTextField *foot = [NSTextField wrappingLabelWithString:
-        @"需要 DSH Desktop、Codex 和 Node.js 24+。\n首次 Crew 安装可能联网；操作不会替你退出 Desktop。"];
+        @"需要 DSH Desktop、Codex 和 Node.js 24+。\n通信源码随包提供；操作不会替你退出 Desktop。"];
     foot.font = [NSFont systemFontOfSize:12];
     foot.textColor = [NSColor secondaryLabelColor];
     foot.frame = NSMakeRect(32, 20, 496, 52);

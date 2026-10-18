@@ -1,8 +1,10 @@
-// Local session-reuse extension, generated from pinned Crew rc.14; upstream package is untouched.
+import { createBridgeTransport } from '__BRIDGE_TRANSPORT_URL__';
+// Derived from DSH Crew rc.14 (c) 2026 ZSeven-W, MIT; see THIRD_PARTY_NOTICES.md.
+// Bridge-owned Desktop transport and persistent per-Codex-chat sessions.
 // DSH host plugin: workers-hub.
 // Runs DeepSeek workers as first-class in-host agent sessions (visible in the
-// Web UI session list), exposes a loopback jobs API for the CC/Codex MCP shim,
-// and serves the one-click installer endpoints for the settings page.
+// Desktop session list), and exposes a narrow loopback jobs API for Codex.
+// Crew's settings installer, process control and multimodal routes are omitted.
 
 import { randomUUID, createHash } from 'node:crypto';
 import { join } from 'node:path';
@@ -66,7 +68,7 @@ export function unattendedQuestion() {
   return error;
 }
 
-export const name = 'dsh-crew';
+export const name = 'codex-desktop-session-hub';
 export const inject = ['agents', 'sessions', 'agentDefaultModel', 'tools', 'llm', 'attachments', 'sessionPersistence'];
 
 // Optional: the host's durable locale preference seeds server-side strings
@@ -386,41 +388,14 @@ async function readBody(req, limit = 64 * 1024) {
 
 // ---------- plugin entry ----------
 
-export async function apply(ctx) {
+export async function apply(ctx, config = {}) {
   seedLangFromHost(ctx);
   const hub = new WorkerRegistry(ctx);
-  try {
-    const { readGlobalConfig } = await import('__CREW_SRC_URL__/install/install.mjs');
-    hub.getConfig = () => readGlobalConfig();
-  } catch {}
+  const { readGlobalConfig } = await import('__CREW_SRC_URL__/install/install.mjs');
+  hub.getConfig = () => readGlobalConfig();
+  const webServer = await createBridgeTransport(config.port ?? 19387);
   const disposers = [];
-
-  // Multimodal bridge: register describe_image / generate_image for the DS
-  // model. Config is read per call so settings-page edits apply live.
   try {
-    const { createMultimodalTools } = await import('__CREW_SRC_URL__/multimodal.mjs');
-    const { readGlobalConfig } = await import('__CREW_SRC_URL__/install/install.mjs');
-    for (const tool of createMultimodalTools(() => readGlobalConfig())) {
-      disposers.push(ctx.effect(() => ctx.tools.register(tool), `dsh-crew: ${tool.name} tool`));
-    }
-  } catch (err) {
-    ctx.logger?.warn?.(`dsh-crew: multimodal tools unavailable: ${err?.message ?? err}`);
-  }
-
-  // Vision route: image paste on the text-only DS models (admission adapter +
-  // pre-step transcription).
-  try {
-    const { installVisionRoute } = await import('__CREW_SRC_URL__/vision-route.mjs');
-    const { readGlobalConfig } = await import('__CREW_SRC_URL__/install/install.mjs');
-    disposers.push(installVisionRoute(ctx, () => readGlobalConfig()));
-  } catch (err) {
-    ctx.logger?.warn?.(`dsh-crew: vision route unavailable: ${err?.message ?? err}`);
-  }
-
-  ctx.inject(['webServer'], (webCtx) => {
-    const webServer = webCtx.webServer;
-    const disposers = [];
-
     disposers.push(webServer.register({
       kind: 'exact', path: `${ROUTE_BASE}/worker-probe`,
       handler: async (req, res) => {
@@ -438,59 +413,7 @@ export async function apply(ctx) {
 
     disposers.push(webServer.register({
       kind: 'exact', path: `${ROUTE_BASE}/ping`,
-      handler: (req, res) => sendJson(res, 200, { ok: true, service: 'dsh-crew-hub', sessionReuse: true, extensionVersion: 3 }),
-    }));
-
-    // WPC14: liveness probe for a ghost job's recorded pid. The panel probes
-    // orphaned tombstones that carry a pid so it can offer the "process still
-    // alive" badge and a kill button; same process.kill(pid, 0) probe the
-    // status shard uses for writer liveness (status-shard.mjs writerProcessAlive).
-    disposers.push(webServer.register({
-      kind: 'exact', path: `${ROUTE_BASE}/proc-alive`,
-      handler: async (req, res) => {
-        if (!isLoopbackRequest(req)) return sendJson(res, 403, { ok: false, error: 'loopback only' });
-        if (req.method !== 'GET') return sendJson(res, 405, { ok: false, error: 'GET only' }, { allow: 'GET' });
-        try {
-          const url = new URL(req.url, 'http://localhost');
-          const pid = parsePid(url.searchParams.get('pid'));
-          if (pid === null) return sendJson(res, 400, { ok: false, error: 'pid must be a positive integer' });
-          return sendJson(res, 200, { ok: true, alive: procAlive(pid) });
-        } catch (err) {
-          return sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
-        }
-      },
-    }));
-
-    // WPC14: verified kill of a ghost job's recorded pid. The pid may have
-    // been recycled since the job died, so the command line is read (ps) and
-    // must match a process shape this plugin spawns (DSH runtime / agy /
-    // grok) before anything is signalled; then SIGTERM (whole group when a
-    // pgid is given) and SIGKILL after a ~3s grace. Refusals are readable,
-    // in the origin-guard style.
-    disposers.push(webServer.register({
-      kind: 'exact', path: `${ROUTE_BASE}/proc-kill`,
-      handler: async (req, res) => {
-        if (!isLoopbackRequest(req)) return sendJson(res, 403, { ok: false, error: 'loopback only' });
-        if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'POST only' }, { allow: 'POST' });
-        try {
-          const body = await readBody(req);
-          adoptLang(body?.lang);
-          const pid = parsePid(body?.pid);
-          if (pid === null) return sendJson(res, 400, { ok: false, error: 'pid must be a positive integer' });
-          let pgid = null;
-          if (body.pgid !== undefined && body.pgid !== null) {
-            pgid = parsePid(body.pgid);
-            if (pgid === null) return sendJson(res, 400, { ok: false, error: 'pgid must be a positive integer' });
-          }
-          const result = await killWorkerProcess({ pid, pgid });
-          return sendJson(res, 200, { ok: true, ...result });
-        } catch (err) {
-          if (err instanceof ProcKillRefused) {
-            return sendJson(res, 403, { ok: false, error: err.message, code: err.code, pid: err.pid ?? null, command: err.command ?? null });
-          }
-          return sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
-        }
-      },
+      handler: (req, res) => sendJson(res, 200, { ok: true, service: 'dsh-crew-hub', sessionReuse: true, extensionVersion: 4, implementation: 'bundled-desktop-bridge', crewPluginRequired: false }),
     }));
 
     disposers.push(webServer.register({
@@ -532,47 +455,6 @@ export async function apply(ctx) {
     }));
 
     disposers.push(webServer.register({
-      kind: 'exact', path: `${ROUTE_BASE}/config`,
-      handler: async (req, res) => {
-        if (!isLoopbackRequest(req)) return sendJson(res, 403, { ok: false, error: 'loopback only' });
-        try {
-          const { readGlobalConfig, writeGlobalConfig } = await import(`__CREW_SRC_URL__/install/install.mjs?t=${Date.now()}`);
-          if (req.method === 'GET') {
-            adoptLang(new URL(req.url, 'http://localhost').searchParams.get('lang'));
-            return sendJson(res, 200, { ok: true, config: readGlobalConfig() });
-          }
-          if (req.method === 'POST') return sendJson(res, 200, { ok: true, config: writeGlobalConfig(await readBody(req)) });
-          return sendJson(res, 405, { ok: false, error: 'GET or POST' }, { allow: 'GET, POST' });
-        } catch (err) {
-          return sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
-        }
-      },
-    }));
-
-    disposers.push(webServer.register({
-      kind: 'exact', path: `${ROUTE_BASE}/presets`,
-      handler: async (req, res) => {
-        if (!isLoopbackRequest(req)) return sendJson(res, 403, { ok: false, error: 'loopback only' });
-        try {
-          const presets = ctx.get('agentPresets');
-          if (presets === undefined) return sendJson(res, 200, { ok: true, presets: [] });
-          const list = await presets.list();
-          return sendJson(res, 200, {
-            ok: true,
-            defaultId: presets.defaultId,
-            presets: list.map((p) => ({ id: p.id, name: p.name ?? p.id, trust: p.trust })),
-          });
-        } catch (err) {
-          return sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
-        }
-      },
-    }));
-
-    // The MCP server runs as its own process and cannot reach ctx.llm, so the
-    // routes the HOST has configured are published here. This is the whole
-    // point of issue #10: a local model is configured once in DSH, and the
-    // worker config names it instead of redefining it.
-    disposers.push(webServer.register({
       kind: 'exact', path: `${ROUTE_BASE}/providers`,
       handler: async (req, res) => {
         if (!isLoopbackRequest(req)) return sendJson(res, 403, { ok: false, error: 'loopback only' });
@@ -590,98 +472,16 @@ export async function apply(ctx) {
       },
     }));
 
-    disposers.push(webServer.register({
-      kind: 'exact', path: `${ROUTE_BASE}/vision-models`,
-      handler: async (req, res) => {
-        if (!isLoopbackRequest(req)) return sendJson(res, 403, { ok: false, error: 'loopback only' });
-        try {
-          const url = new URL(req.url, 'http://localhost');
-          const provider = url.searchParams.get('provider');
-          const force = url.searchParams.get('refresh') === '1';
-          const lang = url.searchParams.get('lang');
-          adoptLang(lang);
-          const { listVisionModels } = await import('__CREW_SRC_URL__/multimodal.mjs');
-          const { readGlobalConfig } = await import('__CREW_SRC_URL__/install/install.mjs');
-          return sendJson(res, 200, { ok: true, models: await listVisionModels(provider, force, () => readGlobalConfig(), lang) });
-        } catch (err) {
-          return sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
-        }
-      },
-    }));
 
-    disposers.push(webServer.register({
-      kind: 'exact', path: `${ROUTE_BASE}/provider-test`,
-      handler: async (req, res) => {
-        if (!isLoopbackRequest(req)) return sendJson(res, 403, { ok: false, error: 'loopback only' });
-        if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'POST only' });
-        try {
-          // The entry comes from the panel form so unsaved edits can be probed.
-          const entry = await readBody(req);
-          adoptLang(entry?.lang);
-          const { testProvider } = await import('__CREW_SRC_URL__/multimodal.mjs');
-          const result = await testProvider(entry, entry?.lang);
-          return sendJson(res, 200, { ok: true, result });
-        } catch (err) {
-          return sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
-        }
-      },
-    }));
-
-    disposers.push(webServer.register({
-      kind: 'exact', path: `${ROUTE_BASE}/install/status`,
-      handler: async (req, res) => {
-        if (!isLoopbackRequest(req)) return sendJson(res, 403, { ok: false, error: 'loopback only' });
-        try {
-          const { installStatus } = await import(`__CREW_SRC_URL__/install/install.mjs?t=${Date.now()}`);
-          return sendJson(res, 200, { ok: true, status: installStatus() });
-        } catch (err) {
-          return sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
-        }
-      },
-    }));
-
-    disposers.push(webServer.register({
-      kind: 'exact', path: `${ROUTE_BASE}/install`,
-      handler: async (req, res) => {
-        if (!isLoopbackRequest(req)) return sendJson(res, 403, { ok: false, error: 'loopback only' });
-        if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'POST only' }, { allow: 'POST' });
-        try {
-          const { target, statusline } = await readBody(req);
-          // Cache-busted import: the installer must always run the code
-          // currently on disk, not whatever this process first loaded —
-          // a stale cached copy once re-broke user settings after a fix.
-          const {
-            installClaudeCode, installCodex, installHudSegment, uninstallClaudeCode, uninstallCodex,
-            installAgy, installGrok, uninstallAgy, uninstallGrok,
-          } = await import(`__CREW_SRC_URL__/install/install.mjs?t=${Date.now()}`);
-          if (target === 'claude') {
-            const base = await installClaudeCode({ statusline: !!statusline });
-            const hud = installHudSegment({});
-            return sendJson(res, 200, {
-              ok: base.ok,
-              actions: [...base.actions, ...hud.actions.map((a) => `hud: ${a}`)],
-            });
-          }
-          if (target === 'codex') return sendJson(res, 200, installCodex({}));
-          if (target === 'agy') return sendJson(res, 200, installAgy({}));
-          if (target === 'grok') return sendJson(res, 200, installGrok({}));
-          if (target === 'claude-uninstall') return sendJson(res, 200, await uninstallClaudeCode({}));
-          if (target === 'codex-uninstall') return sendJson(res, 200, uninstallCodex({}));
-          if (target === 'agy-uninstall') return sendJson(res, 200, uninstallAgy({}));
-          if (target === 'grok-uninstall') return sendJson(res, 200, uninstallGrok({}));
-          return sendJson(res, 400, { ok: false, error: 'target must be claude | codex | agy | grok | claude-uninstall | codex-uninstall | agy-uninstall | grok-uninstall' });
-        } catch (err) {
-          return sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
-        }
-      },
-    }));
-
-    return () => { for (const d of disposers.reverse()) d(); };
-  });
-
-  ctx.logger?.info?.('dsh-crew hub mounted (jobs API + installer endpoints + multimodal tools)');
+  } catch (error) {
+    await webServer.close();
+    await hub.dispose();
+    throw error;
+  }
+  ctx.logger?.info?.('Codex Desktop bridge ready; separate Crew plugin is not required');
   return async () => {
-    for (const d of disposers.reverse()) { try { d(); } catch {} }
+    for (const dispose of disposers.reverse()) { try { dispose(); } catch {} }
+    await webServer.close();
     await hub.dispose();
   };
 }

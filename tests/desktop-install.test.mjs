@@ -26,7 +26,12 @@ test('Windows spaces/backslashes and unrelated Desktop plugin settings are prese
   assert.deepEqual(updated[0], { id: 'whale', config: { enabled: true } });
   assert.equal(updated.find(r => r.insert)?.insert[0].name, module);
   assert.equal(updated.find(r => r.id === 'dsh-crew-hub').disabled, true);
-  assert.throws(() => profilePatch('- id: webserver\n  config:\n    port: 19400\n', module, 19387), /其他端口/);
+  const independent = YAML.parse(profilePatch('- id: webserver\n  config:\n    port: 19400\n', module, 19387));
+  assert.equal(independent.find(r => r.id === 'webserver').config.port, 19400);
+  assert.equal(independent.find(r => r.insert).insert[0].config.port, 19387);
+  const legacy = '- id: webserver\n  config:\n    port: 19387\n';
+  assert(YAML.parse(profilePatch(legacy, module, 19387)).some(row => row.id === 'webserver'));
+  assert(!YAML.parse(profilePatch(legacy, module, 19387, true)).some(row => row.id === 'webserver'));
   assert.throws(() => localAddress('http://127.0.0.1:19387/?token=secret'));
   assert.throws(() => localAddress('http://example.com:19387'));
   const dynamic = profilePatch('# preserve comment\n- id: dynamic\n  config:\n    path: !!js ctx.workspace.path\n', module, 19387);
@@ -39,9 +44,8 @@ test('isolated install, repeat install and migration preserve configs and never 
   process.env.CODEX_DSH_BRIDGE_TEST_HOME = temporary; delete process.env.DSH_HOME;
   try {
     const profile = path.join(temporary, '.dsh/profiles/desktop');
-    fs.mkdirSync(path.join(profile, 'node_modules/@zseven-w'), { recursive: true });
-    fs.symlinkSync(originalCrew, path.join(profile, 'node_modules/@zseven-w/dsh-crew'), 'dir');
-    fs.writeFileSync(path.join(profile, 'package.json'), JSON.stringify({ dsh: { profile: { bundles: ['@zseven-w/dsh-crew', 'whale'] } } }));
+    fs.mkdirSync(profile, { recursive: true });
+    fs.writeFileSync(path.join(profile, 'package.json'), JSON.stringify({ dsh: { profile: { bundles: ['whale'] } } }));
     fs.writeFileSync(path.join(profile, 'cordis.patch.yml'), '- id: whale\n  config: {enabled: true}\n');
     const codex = path.join(temporary, '.codex'); fs.mkdirSync(codex);
     fs.writeFileSync(path.join(codex, 'config.toml'), '[mcp_servers.other]\ncommand="keep"\n');
@@ -55,6 +59,11 @@ test('isolated install, repeat install and migration preserve configs and never 
     assert.deepEqual(patch[0], { id: 'whale', config: { enabled: true } });
     const generated = fs.readFileSync(path.join(profile, 'codex-bridge/crew-session-hub.mjs'), 'utf8');
     assert(!generated.includes('__CREW_SRC_URL__')); assert(!generated.includes('PRIVATE-MARKER'));
+    assert(generated.includes('/codex-bridge/crew-rc14-'));
+    assert(!generated.includes('/node_modules/@zseven-w/'));
+    assert(!fs.existsSync(path.join(profile, 'node_modules/@zseven-w/dsh-crew')));
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(profile, 'package.json'))).dsh.profile.bundles, ['whale']);
+    assert(fs.existsSync(path.join(profile, 'codex-bridge/bridge-transport.mjs')));
     assert(fs.readdirSync(codex).some(name => name.includes('backup')));
     assert(uninstallDesktop().removed); assert(fs.existsSync(path.join(profile, 'codex-bridge/crew-session-hub.mjs')));
     assert(!fs.readFileSync(path.join(codex, 'config.toml'), 'utf8').includes('[mcp_servers.dsh_desktop_crew]'));

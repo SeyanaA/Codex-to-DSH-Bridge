@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { installDesktop, uninstallDesktop } from './desktop-install.mjs';
 import { ROOT, connectionSettings, localAddress, readSettings } from './desktop-settings.mjs';
-import { desktopHealth, ensureDesktop, installCrewIfNeeded, launchDesktop, findDesktop } from './desktop-runtime.mjs';
+import { desktopHealth, ensureDesktop, launchDesktop, findDesktop } from './desktop-runtime.mjs';
 
 export async function main(args = process.argv.slice(2)) {
   const action = args[0] || 'start';
@@ -12,7 +12,6 @@ export async function main(args = process.argv.slice(2)) {
   if (action === 'install') {
     if (Number(process.versions.node.split('.')[0]) < 24) throw new Error('需要 Node.js 24 或更新版本。');
     if (option('--desktop-path')) process.env.DSH_DESKTOP_PATH = path.resolve(option('--desktop-path'));
-    installCrewIfNeeded();
     const result = installDesktop({ workspace: option('--workspace'), hub: option('--desktop-url') ? localAddress(option('--desktop-url')) : undefined, desktopPath: option('--desktop-path'), adopt: args.includes('--adopt-existing') });
     console.log('Desktop 配置完成，原配置已备份。请重新打开 DSH Desktop 和 Codex。');
     console.log('工作区：' + result.workspace); console.log('Host：' + result.hub);
@@ -26,7 +25,7 @@ export async function main(args = process.argv.slice(2)) {
       ['Node.js 24+', Number(process.versions.node.split('.')[0]) >= 24],
       ['Desktop 安装位置', Boolean(findDesktop())],
       ['桥接安装配置', readSettings()?.root === ROOT],
-      ['Crew 已安装', fs.existsSync(path.join(settings.profile, 'node_modules/@zseven-w/dsh-crew/lib/server.mjs'))],
+      ['内置通信源码（不依赖 Crew 插件开关）', Boolean(settings.crew && fs.existsSync(path.join(settings.crew, 'lib/server.mjs')))],
       ['会话组件已生成', fs.existsSync(path.join(settings.profile, 'codex-bridge/crew-session-hub.mjs'))],
       ['Desktop 续聊接口', await desktopHealth(settings)],
     ];

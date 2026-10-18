@@ -22,7 +22,7 @@ node scripts/desktop-launcher.mjs doctor
 
 迁移参数只用于你确认要接管的旧手工同名 MCP。已有无关连接不删除。旧本地实验请用 `--workspace` 指向原工作目录以保留绑定；已安装版本的 desktop.json 会沿用此前选择。
 
-Desktop 自带 CLI 是插件安装的官方入口。未找到时按提示从 Desktop 插件页安装 Crew，不要用 npm 版 DSH 强行修改保留的 desktop profile。
+本版把经 SHA-256 校验的随包归档展开到 `codex-bridge/crew-rc14-<摘要>`；Crew 总开关可关闭，甚至未安装该插件也能完成隔离安装测试。不会通过 Desktop CLI 自动重新启用原插件。通信端口由本程序组件管理，不修改 Desktop 的 Web 服务端口。
 
 ## 源码构建
 

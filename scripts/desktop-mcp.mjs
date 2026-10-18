@@ -19,15 +19,17 @@ if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || 
   console.error('Desktop Crew 地址必须是本机 HTTP 地址。'); process.exit(1);
 }
 const dshHome = settings.dshHome;
-const entry = path.join(dshHome, 'profiles', legacyWeb ? 'web' : 'desktop', 'node_modules', '@zseven-w', 'dsh-crew', 'lib', 'server.mjs');
+const entry = legacyWeb
+  ? path.join(dshHome, 'profiles/web/node_modules/@zseven-w/dsh-crew/lib/server.mjs')
+  : settings.crew && path.join(settings.crew, 'lib/server.mjs');
 try {
-  if (!existsSync(entry)) throw new Error('DSH Desktop 尚未安装 Crew 插件。');
+  if (!entry || !existsSync(entry)) throw new Error('内置通信组件尚未安装，请运行本程序的 install。无需启用 Desktop 的 Crew 插件。');
   if (!legacyWeb) await ensureDesktop();
   const response = await fetch(`${base.replace(/\/$/, '')}/_dsh/dsh-crew/ping`, { signal: AbortSignal.timeout(4000) });
   const info = await response.json();
-  if (!response.ok || info.service !== 'dsh-crew-hub' || (!legacyWeb && info.sessionReuse !== true)) throw new Error('Desktop Crew 会话复用扩展未就绪。');
-} catch {
-  console.error(legacyWeb ? '显式选择的旧 Web Crew 未就绪，请检查旧 Web 配置；不会改用 Desktop 或独立 Agent。' : '请先打开 DSH Desktop 并启用 Crew；当前 Desktop 连接未就绪。不会回落到后台独立 Agent。');
+  if (!response.ok || info.service !== 'dsh-crew-hub' || (!legacyWeb && (info.sessionReuse !== true || info.implementation !== 'bundled-desktop-bridge'))) throw new Error('Desktop 内置通信组件未就绪。');
+} catch (error) {
+  console.error(legacyWeb ? '显式选择的旧 Web Crew 未就绪，请检查旧 Web 配置；不会改用 Desktop 或独立 Agent。' : error.message + ' 不会回落到 Web 或独立 Agent。');
   process.exit(1);
 }
 

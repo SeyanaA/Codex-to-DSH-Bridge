@@ -4,7 +4,7 @@ Unicode true
 !include "FileFunc.nsh"
 !include "x64.nsh"
 !define PRODUCT "Codex-to-DSH Bridge"
-!define VERSION "0.2.0-preview.1"
+!define VERSION "0.3.0-preview.1"
 !define UNINST "Software\Microsoft\Windows\CurrentVersion\Uninstall\CodexToDSHBridge"
 Name "${PRODUCT} ${VERSION}"
 OutFile "${OUTPUT}"
@@ -15,7 +15,7 @@ SetCompressor /SOLID lzma
 SetCompressorDictSize 32
 SetDatablockOptimize on
 CRCCheck force
-VIProductVersion "0.2.0.1"
+VIProductVersion "0.3.0.1"
 VIAddVersionKey /LANG=2052 "ProductName" "${PRODUCT}"
 VIAddVersionKey /LANG=2052 "FileDescription" "Codex to DSH MCP Bridge Setup"
 VIAddVersionKey /LANG=2052 "FileVersion" "${VERSION}"
@@ -24,7 +24,7 @@ VIAddVersionKey /LANG=2052 "LegalCopyright" "MIT; third-party notices included"
 Var TestMode
 Var SetupResult
 !define MUI_ABORTWARNING
-!define MUI_WELCOMEPAGE_TEXT "连接 Codex 与已安装的 DSH Desktop，同一对话持续委派。包含 Node.js 和旧 Web 模式离线运行环境。$\r$\n$\r$\n安装会备份并注册当前用户的 Codex MCP 配置。请先安装并初始化 DSH Desktop；首次 Crew 安装可能联网下载依赖。模型任务使用对应服务的 API 用量。"
+!define MUI_WELCOMEPAGE_TEXT "连接 Codex 与已安装的 DSH Desktop，同一对话持续委派。包含 Node.js 和旧 Web 模式离线运行环境。$\r$\n$\r$\n安装会备份并注册当前用户的 Codex MCP 配置。请先安装并初始化 DSH Desktop；通信组件随包提供，无需另行启用 Crew。模型任务使用对应服务的 API 用量。"
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "${STAGING}\payload\LICENSE"
 !insertmacro MUI_PAGE_DIRECTORY

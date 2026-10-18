@@ -27,3 +27,11 @@ The session Hub template is derived from @zseven-w/dsh-crew 0.1.0-rc.14 (ZSeven-
 ## yaml
 
 The bundled yaml JavaScript package is MIT licensed, copyright Eemeli Aro. Its license is included at vendor/yaml/LICENSE. It is used to preserve Desktop plugin configuration values during installation.
+
+## Bundled Desktop communication (0.3 preview)
+
+Desktop installs the exact `vendor/zseven-w-dsh-crew-0.1.0-rc.14.tgz` archive into its bridge-owned directory without enabling the separate Crew plugin. The archive SHA-256 is `bd8879b0e0e43795bd1ddde491491e6068f4340196064932b5b211db00de80d8`. Its `LICENSE` retains Copyright (c) 2026 ZSeven-W and the full MIT terms. The upstream MCP bundle includes its upstream dependencies and bundled notices.
+
+The modified session Hub is derived from Crew rc.14. Bridge changes add conversation mapping/resume, the fixed model policy, a dedicated loopback transport independent of Desktop Web services, a verified offline source installer, and configuration migration. Unrelated Crew settings UI, installer, process-control endpoints and multimodal tool registration are not mounted by the bridge-owned Desktop extension. This is an attributed derivative integration, not an assertion of independent authorship of Crew.
+
+REA (https://github.com/morluto/rea) was evaluated as an analysis tool. No REA code, binary, skill or dependency is bundled or required. Crew source was already available, so native decompilation was unnecessary.

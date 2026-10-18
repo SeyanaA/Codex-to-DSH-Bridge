@@ -2,7 +2,7 @@
 
 让 Codex 把合适的子任务交给 DeepSeek，**直接在 DSH Desktop 里看到过程，并在同一条对话里继续工作**。Codex 取回结果后负责检查和整合。
 
-当前版本：**0.2.0-preview.1**。提供 Mac 通用 DMG 和 Windows x64 EXE。这是 DSH Crew 的本地适配与启动器，不是 DeepSeek 官方产品，也不包含 DSH Desktop 应用本身。
+源码开发版本：**0.3.0-preview.1**。Mac 已本机验证并提供本地预览包；Windows 源码与封装入口同步，尚未构建本轮安装包。GitHub 已发布安装包仍是 **0.2.0-preview.1**。这是内置 DSH Crew 衍生通信代码的本地桥接器与启动器，不是 DeepSeek 官方产品，也不包含 DSH Desktop 应用本身。
 
 ## 这次最重要的变化
 
@@ -12,13 +12,13 @@
 - 固定使用 **DeepSeek-V41-Flash，MAX**，实际编号为 `deepseek-official/deepseek-flash`，不会自动切到 V4 或 Pro。
 - Mac 和 Windows 共用同一套 Desktop 接入与续聊代码。旧 Windows 离线 Web 环境保留为单独的兼容入口。
 
-完整变化见 [发布说明](RELEASE_NOTES.md)，初稿由 DSH 编写，Codex 审核。
+这次内置通信改造见 [实施与验证记录](docs/bundled-desktop-runtime.md)。上一版发布说明见 [发布说明](RELEASE_NOTES.md)，初稿由 DSH 编写，Codex 审核。
 
 ## 安装前
 
 1. 安装 Codex 和 [DeepSeek Harness Desktop](https://github.com/deepseek-ai/deepseek-harness)。先打开一次 Desktop，完成模型配置和初始化，再从应用菜单完全退出。
 2. Mac 需要 Node.js 24 或更新版本；Windows 包内已带 Node.js。
-3. 配置时若 Desktop 尚未安装 Crew，会尝试通过 Desktop 自带的官方命令安装固定的 `@zseven-w/dsh-crew@0.1.0-rc.14`，首次可能联网。若该版本没有对应命令，请先在 Desktop 插件页安装并启用 Crew，完全退出后重试。
+3. 本版直接展开随包的 Crew 衍生通信源码，无需安装或启用 Desktop 的 Crew 插件，也不需要联网安装该插件。原 Crew 组件保持关闭。
 
 安装前会备份配置，保留其他插件和 MCP。Desktop 使用自己已有的模型配置，旧 Web 的账号和历史不会自动合并到 Desktop。
 
@@ -48,13 +48,17 @@ Codex 使用 `dsh_desktop_crew`，把当前 `CODEX_THREAD_ID` 原样作为 `conv
 
 任务串行执行。写代码前应准备独立目录或 Git worktree；Codex 负责验收和整合，程序不会自动创建 worktree 或合并修改。你也能在 Desktop 直接发消息，但请避免同时给同一会话下冲突指令。
 
-## 为什么原 Crew 组件显示关闭
+## 是否需要另装 DSH Crew
 
-原版 Crew 每次派发都会新建会话。为了支持续聊，本程序保留 Crew 安装与页面，关闭原后台组件，换成 `codex-desktop-session-hub`。**这是替换后台实现，不是卸载 Crew 或停止委派。**新组件保存在 Desktop 的配置目录中，不引用开发者机器上的路径。
+本版不需要。安装包内置固定版本 Crew rc.14 的源码及许可，安装到 Desktop 配置目录下的 `codex-bridge`，不从用户另装的 Crew 插件目录读取代码，也不会自动启用原 Crew 插件。
+
+会话组件由 Desktop 自身加载，任务仍在 Desktop 运行和显示。桥接器提供独立的 localhost 通信入口，默认 `19387`，不依赖 Desktop 是否启动 Web 服务。旧的 `dsh-crew-hub` 保持关闭，避免两套后台抢同一任务。
+
+这是基于 Crew 的开源改造与封装；上游通信代码、桥接器新增功能和验证范围在 [实施记录](docs/bundled-desktop-runtime.md) 中分别说明。
 
 ## 诊断、停止和回退
 
-- “诊断”检查路径、配置、Crew 和接口；不会调用模型，也不会把失败项目显示为成功。
+- “诊断”检查路径、配置、内置源码和接口；不会调用模型，也不会把失败项目显示为成功。
 - 本程序不会替你退出 Desktop。退出请用 Desktop 菜单；关闭窗口可能只是隐藏。
 - 卸载保留 Desktop 组件、模型凭据、会话和备份。Windows 卸载仍校验安装目录归属。
 - 手工接入过同名 MCP 时会保留并提示冲突；确认迁移后使用 `install --adopt-existing`。

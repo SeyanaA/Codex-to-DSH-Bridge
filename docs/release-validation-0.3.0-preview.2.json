@@ -1,0 +1,16 @@
+{
+  "version": "0.3.0-preview.2",
+  "surface": "web",
+  "windowsNativeTest": true,
+  "desktopReliabilityVerified": false,
+  "windowsInteractiveWizardTest": false,
+  "automatedTests": {
+    "pass": 20,
+    "fail": 0
+  },
+  "installerSha256": "ad64553517ec1140031ac3e8dbb185043eed6ff33c702707282f3d10072f60bb",
+  "testRecord": "windows-web-installer-check.json",
+  "realModelTasks": "windows-web-task-check.json",
+  "model": "deepseek-official/deepseek-flash",
+  "effort": "max"
+}

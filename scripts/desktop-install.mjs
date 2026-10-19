@@ -10,9 +10,25 @@ const begin = '# BEGIN codex-desktop-bridge';
 const end = '# END codex-desktop-bridge';
 const policyStart = '<!-- codex-desktop-bridge -->', policyEnd = '<!-- /codex-desktop-bridge -->';
 
+export function removeOwnedLegacyWebMcp(text, legacyRoot) {
+  if (!legacyRoot) return text;
+  const start = /^# managed-by: codex-to-dsh-bridge\r?\n\[mcp_servers\.(?:dsh-crew|"dsh-crew"|'dsh-crew')\][^\n]*\n/m.exec(text);
+  if (!start) return text;
+  const after = start.index + start[0].length;
+  const headers = [...text.slice(after).matchAll(/^\[([^\n]+)\].*$/gm)];
+  const next = headers.find(match => !/^mcp_servers\.(?:dsh-crew|"dsh-crew"|'dsh-crew')\./.test(match[1]));
+  let stop = next ? after + next.index : text.length;
+  // A following managed section's BEGIN/comment belongs to that section,
+  // even though TOML permits it between this table's final key and the next.
+  const trailing = text.slice(after, stop).match(/(?:\r?\n[ \t]*(?:#[^\r\n]*)?)+$/);
+  if (trailing) stop -= trailing[0].length;
+  if (!text.slice(after, stop).includes(JSON.stringify(path.join(legacyRoot, 'scripts/mcp.mjs')))) return text;
+  return text.slice(0, start.index) + text.slice(stop);
+}
+
 export function mcpConfiguration(old, block, adopt = false) {
   const from = old.indexOf(begin), to = old.indexOf(end);
-  if ((from >= 0) !== (to >= 0)) throw new Error('MCP 配置标记不完整，请先检查备份。');
+  if ((from >= 0) !== (to >= 0) || (from >= 0 && (to < from || old.indexOf(begin, from + begin.length) >= 0 || old.indexOf(end, to + end.length) >= 0))) throw new Error('MCP 配置标记不完整或顺序异常，请先检查备份。');
   if (from >= 0) return old.slice(0, from) + block + old.slice(to + end.length);
   const root = /^\[mcp_servers\.(?:dsh_desktop_crew|"dsh_desktop_crew"|'dsh_desktop_crew')\][ \t]*(?:#.*)?$/m.exec(old);
   if (root) {
@@ -31,6 +47,7 @@ export function profilePatch(text, moduleFile, port, removeLegacyPort = false) {
   const rows = document.toJS();
   // Only replace the well-known bridge entry. Preserve other plugins/configs.
   const keep = row => {
+    if (!row || typeof row !== 'object') return true;
     // 0.2's owned installer added this exact override. Remove it only when
     // the old ownership record confirms the migration, leaving custom Web
     // settings alone. Desktop IPC itself does not require a Web listener.
@@ -63,13 +80,43 @@ Users view and message tasks inside DSH Desktop. Poll dsh_worker_status and dsh_
 ${policyEnd}`;
 }
 
-export function installDesktop({ workspace, hub, adopt = false, desktopPath } = {}) {
+export function installDesktop({ workspace, hub, adopt = false, desktopPath, surface, dshHome, webURL } = {}) {
   const settings = connectionSettings();
+  if (surface !== undefined && !['desktop', 'web'].includes(surface)) throw new Error('surface 必须是 desktop 或 web。');
+  if (surface) settings.surface = surface;
+  if (settings.surface === 'web' && !dshHome && !readSettings()?.dshHome) {
+    const previous = path.join(home(), '.codex-to-dsh-bridge/installation.json');
+    settings.dshHome = fs.existsSync(previous) ? JSON.parse(fs.readFileSync(previous, 'utf8')).dshHome : path.join(home(), '.dsh-codex-bridge');
+  }
+  if (dshHome) settings.dshHome = path.resolve(dshHome);
+  if (webURL) settings.webURL = localAddress(webURL);
+  settings.profile = path.join(settings.dshHome, 'profiles', settings.surface);
   if (hub) settings.hub = localAddress(hub);
   if (workspace) settings.workspace = path.resolve(workspace);
   if (desktopPath) settings.desktopPath = path.resolve(desktopPath);
   const manifest = path.join(settings.profile, 'package.json');
-  if (!fs.existsSync(manifest)) throw new Error('请先安装并打开一次 DSH Desktop，完成初始化后退出，再运行安装与配置。');
+  if (settings.surface === 'web' && !fs.existsSync(manifest)) {
+    const template = path.join(ROOT, 'template/web');
+    if (fs.existsSync(path.join(template, 'package.json'))) {
+      if (fs.existsSync(settings.profile)) throw new Error('Web profile 已存在但缺少 package.json，未覆盖。');
+      fs.mkdirSync(path.dirname(settings.profile), { recursive: true });
+      const initial = JSON.parse(fs.readFileSync(path.join(template, 'package.json'), 'utf8'));
+      if (!Array.isArray(initial?.dsh?.profile?.bundles)) throw new Error('Web 离线模板缺少 bundles，未创建 profile。');
+      initial.dsh.profile.bundles = initial.dsh.profile.bundles.filter(name => name !== '@zseven-w/dsh-crew');
+      const staging = fs.mkdtempSync(path.join(path.dirname(settings.profile), '.bridge-web-stage-'));
+      try {
+        fs.cpSync(template, staging, { recursive: true });
+        atomicWrite(path.join(staging, 'package.json'), JSON.stringify(initial, null, 2));
+        fs.renameSync(staging, settings.profile);
+      } finally { fs.rmSync(staging, { recursive: true, force: true }); }
+    }
+  }
+  if (!fs.existsSync(manifest)) throw new Error('请先初始化 DSH ' + settings.surface + ' profile，退出服务后再运行安装与配置。');
+  if (settings.surface === 'web') {
+    const data = JSON.parse(fs.readFileSync(manifest, 'utf8'));
+    const bundles = data?.dsh?.profile?.bundles;
+    if (!Array.isArray(bundles) || !bundles.includes('@deepseek-ai/dsh-web-app') || !bundles.includes('@deepseek-ai/dsh-base')) throw new Error('Web profile 缺少 base/web-app bundles，请先恢复完整 profile，未注册 MCP。');
+  }
   const directory = path.join(settings.profile, 'codex-bridge');
   const extension = path.join(directory, 'crew-session-hub.mjs');
   const ownerFile = path.join(directory, 'owner.json');
@@ -82,14 +129,19 @@ export function installDesktop({ workspace, hub, adopt = false, desktopPath } = 
   const oldOwner = fs.existsSync(ownerFile) ? JSON.parse(fs.readFileSync(ownerFile, 'utf8')) : null;
   const patch = profilePatch(fs.existsSync(patchFile) ? fs.readFileSync(patchFile, 'utf8') : '[]', extension, Number(new URL(settings.hub).port), oldOwner?.version?.startsWith('0.2.'));
   const configFile = path.join(home(), '.codex/config.toml');
-  const previous = fs.existsSync(configFile) ? fs.readFileSync(configFile, 'utf8') : '';
+  let previous = fs.existsSync(configFile) ? fs.readFileSync(configFile, 'utf8') : '';
+  if (settings.surface === 'web') {
+    const legacyFile = path.join(home(), '.codex-to-dsh-bridge/installation.json');
+    if (fs.existsSync(legacyFile)) previous = removeOwnedLegacyWebMcp(previous, JSON.parse(fs.readFileSync(legacyFile, 'utf8')).root);
+  }
   const block = `${begin}\n[mcp_servers.dsh_desktop_crew]\ncommand = ${JSON.stringify(process.execPath)}\nargs = [${JSON.stringify(path.join(ROOT, 'scripts/desktop-mcp.mjs'))}]\nstartup_timeout_sec = 90\ntool_timeout_sec = 120\n[mcp_servers.dsh_desktop_crew.env]\nDSHPLUGIN_CREW_HUB = ${JSON.stringify(settings.hub)}\nDSH_HOME = ${JSON.stringify(settings.dshHome)}\n${end}`;
   const config = mcpConfiguration(previous, block, adopt);
   const policyFile = path.join(home(), '.codex/AGENTS.md');
   const policy = fs.existsSync(policyFile) ? fs.readFileSync(policyFile, 'utf8') : '';
   const start = policy.indexOf(policyStart), stop = policy.indexOf(policyEnd);
-  if ((start >= 0) !== (stop >= 0)) throw new Error('协作规则标记不完整，请先检查。');
-  const updatedPolicy = start < 0 ? policy.trimEnd() + '\n\n' + delegationPolicy(settings.workspace) + '\n' : policy.slice(0, start) + delegationPolicy(settings.workspace) + policy.slice(stop + policyEnd.length);
+  if ((start >= 0) !== (stop >= 0) || (start >= 0 && stop < start)) throw new Error('协作规则标记不完整或顺序异常，请先检查。');
+  const newPolicy = settings.surface === 'web' ? delegationPolicy(settings.workspace).replaceAll('Desktop', 'Web').replace('dsh_desktop_crew', 'dsh_desktop_crew (bundled Web surface)').replace('Do not silently fall back to Web or standalone agents.', 'Do not silently fall back to Desktop, legacy Web Crew or standalone agents.') : delegationPolicy(settings.workspace);
+  const updatedPolicy = start < 0 ? policy.trimEnd() + '\n\n' + newPolicy + '\n' : policy.slice(0, start) + newPolicy + policy.slice(stop + policyEnd.length);
   const version = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
   const backups = [patchFile, configFile, policyFile, settingsPath(), extension, ownerFile, transport].map(backup).filter(Boolean);
   const originals = new Map([extension, ownerFile, transport, patchFile, configFile, policyFile, settingsPath()].map(file => [file, fs.existsSync(file) ? fs.readFileSync(file) : null]));

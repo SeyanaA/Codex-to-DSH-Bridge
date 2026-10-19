@@ -34,6 +34,10 @@ export function launchDesktop() {
   } else throw new Error('此启动器支持 macOS 和 Windows。');
 }
 export async function ensureDesktop() {
+  if (connectionSettings().surface === 'web') {
+    const { ensureBundledWeb } = await import('./web-runtime.mjs');
+    return ensureBundledWeb();
+  }
   if (await desktopHealth()) return;
   launchDesktop();
   const deadline = Date.now() + 45000;

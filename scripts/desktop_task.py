@@ -18,7 +18,7 @@ if args.operation == 'submit':
     if not args.task_file or not args.task_file.is_file(): parser.error('submit requires --task-file')
     key = os.environ.get('CODEX_THREAD_ID')
     if not key: parser.error('Run from the intended Codex chat; CODEX_THREAD_ID is required.')
-    task = args.task_file.read_text()
+    task = args.task_file.read_text(encoding='utf-8')
     if not task.strip(): parser.error('Task must not be empty')
     name, payload = 'dsh_spawn_worker', {'conversation_id': key, 'task': task, 'cwd': str(WORKSPACE), 'tier': args.tier, 'effort': args.effort}
 elif args.operation == 'status':

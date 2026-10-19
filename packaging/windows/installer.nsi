@@ -4,18 +4,26 @@ Unicode true
 !include "FileFunc.nsh"
 !include "x64.nsh"
 !define PRODUCT "Codex-to-DSH Bridge"
-!define VERSION "0.3.0-preview.1"
+!define VERSION "0.3.0-preview.2"
+!ifndef BRIDGE_SURFACE
+!define BRIDGE_SURFACE "desktop"
+!endif
 !define UNINST "Software\Microsoft\Windows\CurrentVersion\Uninstall\CodexToDSHBridge"
 Name "${PRODUCT} ${VERSION}"
 OutFile "${OUTPUT}"
 InstallDir "$LOCALAPPDATA\Programs\Codex-to-DSH Bridge"
 InstallDirRegKey HKCU "${UNINST}" "InstallLocation"
 RequestExecutionLevel user
-SetCompressor /SOLID lzma
+!ifndef BRIDGE_COMPRESSOR
+!define BRIDGE_COMPRESSOR "lzma"
+!endif
+SetCompressor /SOLID ${BRIDGE_COMPRESSOR}
+!if "${BRIDGE_COMPRESSOR}" == "lzma"
 SetCompressorDictSize 32
+!endif
 SetDatablockOptimize on
 CRCCheck force
-VIProductVersion "0.3.0.1"
+VIProductVersion "0.3.0.2"
 VIAddVersionKey /LANG=2052 "ProductName" "${PRODUCT}"
 VIAddVersionKey /LANG=2052 "FileDescription" "Codex to DSH MCP Bridge Setup"
 VIAddVersionKey /LANG=2052 "FileVersion" "${VERSION}"
@@ -24,7 +32,13 @@ VIAddVersionKey /LANG=2052 "LegalCopyright" "MIT; third-party notices included"
 Var TestMode
 Var SetupResult
 !define MUI_ABORTWARNING
+!if "${BRIDGE_SURFACE}" == "web"
+!define SURFACE_LABEL "DSH Web"
+!define MUI_WELCOMEPAGE_TEXT "连接 Codex 与 DSH Web，同一对话持续委派。包含 Node.js 和 Web 离线运行环境。$\r$\n$\r$\n安装会备份并注册当前用户的 Codex MCP 配置。通信组件随包提供，无需启用 Crew 插件。模型任务使用对应服务的 API 用量。"
+!else
+!define SURFACE_LABEL "DSH Desktop"
 !define MUI_WELCOMEPAGE_TEXT "连接 Codex 与已安装的 DSH Desktop，同一对话持续委派。包含 Node.js 和旧 Web 模式离线运行环境。$\r$\n$\r$\n安装会备份并注册当前用户的 Codex MCP 配置。请先安装并初始化 DSH Desktop；通信组件随包提供，无需另行启用 Crew。模型任务使用对应服务的 API 用量。"
+!endif
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "${STAGING}\payload\LICENSE"
 !insertmacro MUI_PAGE_DIRECTORY
@@ -135,15 +149,15 @@ Section "Bridge" Main
     Abort "离线运行环境解包失败。"
   ${EndIf}
   Delete "$INSTDIR\bridge-runtime.tar.gz"
-  nsExec::ExecToStack '"$INSTDIR\runtime\node.exe" "$INSTDIR\payload\scripts\desktop-launcher.mjs" install'
+  nsExec::ExecToStack '"$INSTDIR\runtime\node.exe" "$INSTDIR\payload\scripts\desktop-launcher.mjs" install --surface ${BRIDGE_SURFACE}'
   Pop $SetupResult
   Pop $R1
   DetailPrint "$R1"
   ${If} $TestMode == 0
     CreateDirectory "$SMPROGRAMS\${PRODUCT}"
     CreateShortcut "$SMPROGRAMS\${PRODUCT}\1 安装与配置.lnk" "$INSTDIR\run.cmd" "install"
-    CreateShortcut "$SMPROGRAMS\${PRODUCT}\2 打开 DSH Desktop.lnk" "$INSTDIR\run.cmd" "start"
-    CreateShortcut "$SMPROGRAMS\${PRODUCT}\打开 Desktop.lnk" "$INSTDIR\run.cmd" "open"
+    CreateShortcut "$SMPROGRAMS\${PRODUCT}\2 打开 ${SURFACE_LABEL}.lnk" "$INSTDIR\run.cmd" "start"
+    CreateShortcut "$SMPROGRAMS\${PRODUCT}\打开 ${SURFACE_LABEL}.lnk" "$INSTDIR\run.cmd" "open"
     CreateShortcut "$SMPROGRAMS\${PRODUCT}\旧 Web 兼容入口.lnk" "$INSTDIR\run.cmd" "web-start"
     CreateShortcut "$SMPROGRAMS\${PRODUCT}\停止服务.lnk" "$INSTDIR\run.cmd" "stop"
     CreateShortcut "$SMPROGRAMS\${PRODUCT}\诊断.lnk" "$INSTDIR\run.cmd" "doctor"

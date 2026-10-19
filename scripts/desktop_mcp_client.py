@@ -9,13 +9,13 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
-settings = json.loads((Path.home() / '.codex-to-dsh-bridge/desktop.json').read_text())
+settings = json.loads((Path.home() / '.codex-to-dsh-bridge/desktop.json').read_text(encoding='utf-8'))
 WORKSPACE = Path(settings['workspace'])
 
 class Client:
     def __init__(self):
         self.process = subprocess.Popen([shutil.which('node') or settings['node'], str(ROOT / 'scripts/desktop-mcp.mjs')],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8',
             cwd=WORKSPACE, env=os.environ.copy())
         self.replies = queue.Queue(); self.serial = 0
         def read():

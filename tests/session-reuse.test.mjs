@@ -31,7 +31,7 @@ function host() {
     sessions: { flush: async () => {} },
   };
   const registry = () => new WorkerRegistry(ctx, { publish() {} });
-  return { registry, live, counts: () => ({ creates, resumes }) };
+  return { ctx, registry, live, counts: () => ({ creates, resumes }) };
 }
 const spec = { cwd: '/private/tmp/crew-unit-test', conversationKey: '00000001-0000-0000-0000-000000000001', effort: 'off' };
 
@@ -85,4 +85,21 @@ test('after registry restart an idle session opened by Desktop is adopted', asyn
   assert.equal(second.sessionId, first.sessionId); assert.equal(second.result, 'remember|recall');
   assert.equal(second.continued, true); assert.deepEqual(h.counts(), { creates: 1, resumes: 0 });
   assert.equal(first.tokens.input, 10); assert.equal(second.tokens.input, 10);
+});
+
+test('cancelling while session setup is pending never submits the cancelled prompt', async () => {
+  const h = host(), hub = h.registry();
+  let release, entered;
+  const gate = new Promise(resolve => { release = resolve; });
+  const ready = new Promise(resolve => { entered = resolve; });
+  const create = h.ctx.agents.create;
+  h.ctx.agents.create = async options => { entered(); await gate; return create(options); };
+  const job = await hub.spawn({ ...spec, task: 'must never reach the model' });
+  await ready;
+  const cancelled = hub.cancel(job.id);
+  release(); await cancelled;
+  assert.equal(job.status, 'cancelled'); assert(job.endedAt);
+  assert.equal(job.tokens.input, 0); assert.equal(job.result, null);
+  const next = await hub.spawn({ ...spec, task: 'safe follow-up' }); await next.promise;
+  assert.equal(next.result, 'safe follow-up');
 });

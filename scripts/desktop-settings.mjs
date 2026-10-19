@@ -19,9 +19,10 @@ export function localAddress(value) {
 export function connectionSettings() {
   const saved = readSettings();
   const dshHome = path.resolve(process.env.DSH_HOME || saved?.dshHome || path.join(home(), '.dsh'));
-  return { ...saved, dshHome,
+  const surface = saved?.surface || 'desktop';
+  return { ...saved, surface, dshHome,
     hub: localAddress(process.env.DSHPLUGIN_CREW_HUB || saved?.hub || 'http://127.0.0.1:19387'),
-    profile: path.join(dshHome, 'profiles/desktop'),
+    profile: path.join(dshHome, 'profiles', surface === 'web' ? 'web' : 'desktop'),
     workspace: saved?.workspace || path.join(home(), '.codex-to-dsh-bridge/desktop-smoke-workspace') };
 }
 export function backup(file) {

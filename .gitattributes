@@ -6,6 +6,7 @@
 *.md text eol=lf
 *.py text eol=lf
 *.nsi text eol=lf
+*.ps1 text eol=crlf
 *.tgz -text
 # Keep vendored library bytes intact; its upstream whitespace is intentional.
 vendor/yaml/** -whitespace

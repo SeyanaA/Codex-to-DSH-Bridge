@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { installDesktop, mcpConfiguration, profilePatch, uninstallDesktop } from '../scripts/desktop-install.mjs';
+import { installDesktop, mcpConfiguration, profilePatch, uninstallDesktop, removeOwnedLegacyWebMcp } from '../scripts/desktop-install.mjs';
 import { localAddress } from '../scripts/desktop-settings.mjs';
 import { buildSessionHub } from '../scripts/build-session-hub.mjs';
 const require = createRequire(import.meta.url), YAML = require('../vendor/yaml');
@@ -18,6 +18,7 @@ test('MCP upgrade preserves unrelated servers, handles nested env and requires a
   assert(updated.includes('[mcp_servers.other]')); assert(updated.includes('[mcp_servers.final]'));
   assert(!updated.includes('OLD=')); assert(!updated.includes('command="old"'));
   assert.throws(() => mcpConfiguration('# BEGIN codex-desktop-bridge', 'NEW'), /标记不完整/);
+  assert.throws(() => mcpConfiguration('# END codex-desktop-bridge\nkeep=1\n# BEGIN codex-desktop-bridge', 'NEW'), /顺序异常/);
 });
 
 test('Windows spaces/backslashes and unrelated Desktop plugin settings are preserved', () => {
@@ -36,6 +37,18 @@ test('Windows spaces/backslashes and unrelated Desktop plugin settings are prese
   assert.throws(() => localAddress('http://example.com:19387'));
   const dynamic = profilePatch('# preserve comment\n- id: dynamic\n  config:\n    path: !!js ctx.workspace.path\n', module, 19387);
   assert(dynamic.includes('!!js')); assert(dynamic.includes('preserve comment'));
+});
+
+test('Web migration removes only a legacy MCP registration with matching ownership and path', () => {
+  const root = path.resolve('old install');
+  const old = '# managed-by: codex-to-dsh-bridge\n[mcp_servers.dsh-crew]\nargs = [' + JSON.stringify(path.join(root, 'scripts/mcp.mjs')) + ']\n[mcp_servers.dsh-crew.env]\nX="keep private"\n[mcp_servers.other]\ncommand="keep"\n';
+  assert.equal(removeOwnedLegacyWebMcp(old, root).trimStart(), '[mcp_servers.other]\ncommand="keep"\n');
+  const adjacent = old.replace('[mcp_servers.other]', '# BEGIN codex-desktop-bridge\n[mcp_servers.other]') + '# END codex-desktop-bridge\n';
+  const migrated = removeOwnedLegacyWebMcp(adjacent, root);
+  assert(migrated.includes('# BEGIN codex-desktop-bridge'));
+  assert.doesNotThrow(() => mcpConfiguration(migrated, 'replacement'));
+  assert.equal(removeOwnedLegacyWebMcp(old, path.resolve('another app')), old);
+  assert.equal(removeOwnedLegacyWebMcp(old.replace('# managed-by: codex-to-dsh-bridge\n', ''), root), old.replace('# managed-by: codex-to-dsh-bridge\n', ''));
 });
 
 test('isolated install, repeat install and migration preserve configs and never copy credentials', () => {
@@ -82,4 +95,31 @@ test('builder rejects an upstream source mismatch', () => {
     fs.mkdirSync(path.join(temporary, 'src/hub'), { recursive: true }); fs.writeFileSync(path.join(temporary, 'src/hub/index.mjs'), 'changed');
     assert.throws(() => buildSessionHub(temporary), /版本/);
   } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
+});
+
+test('explicit Web install targets the existing Web profile with Crew disabled', () => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'bridge-web-'));
+  const oldHome = process.env.CODEX_DSH_BRIDGE_TEST_HOME, oldDsh = process.env.DSH_HOME;
+  process.env.CODEX_DSH_BRIDGE_TEST_HOME = temporary; delete process.env.DSH_HOME;
+  try {
+    const data = path.join(temporary, 'Web 数据');
+    const profile = path.join(data, 'profiles/web'); fs.mkdirSync(profile, { recursive: true });
+    const manifest = JSON.stringify({ dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] } } });
+    fs.writeFileSync(path.join(profile, 'package.json'), manifest);
+    installDesktop({ surface: 'web', dshHome: data, webURL: 'http://127.0.0.1:3083' });
+    const saved = JSON.parse(fs.readFileSync(path.join(temporary, '.codex-to-dsh-bridge/desktop.json'), 'utf8'));
+    assert.equal(saved.surface, 'web'); assert.equal(saved.profile, profile);
+    assert.equal(saved.webURL, 'http://127.0.0.1:3083');
+    assert.equal(fs.readFileSync(path.join(profile, 'package.json'), 'utf8'), manifest);
+    assert(fs.existsSync(path.join(profile, 'codex-bridge/crew-session-hub.mjs')));
+    assert(!fs.existsSync(path.join(data, 'profiles/desktop')));
+    assert(uninstallDesktop().removed);
+    assert.equal(fs.readFileSync(path.join(profile, 'package.json'), 'utf8'), manifest);
+    fs.writeFileSync(path.join(profile, 'package.json'), '{}');
+    assert.throws(() => installDesktop({ surface: 'web', dshHome: data }), /缺少 base\/web-app/);
+  } finally {
+    if (oldHome === undefined) delete process.env.CODEX_DSH_BRIDGE_TEST_HOME; else process.env.CODEX_DSH_BRIDGE_TEST_HOME = oldHome;
+    if (oldDsh === undefined) delete process.env.DSH_HOME; else process.env.DSH_HOME = oldDsh;
+    fs.rmSync(temporary, { recursive: true, force: true });
+  }
 });

@@ -1,31 +1,31 @@
-# Codex-to-DSH Bridge v0.3.0-preview.1：Mac 内置通信版
+# v0.3.0-preview.2 · Windows Web：关闭 Crew 后继续对话
 
-说明初稿由 DSH Desktop 中的 DeepSeek-V41-Flash / MAX 撰写，Codex 核对并修订。
+**本版支持并验证 Windows DSH Web。Desktop 的可靠性尚未验证，本次 Web 验收不构成 Desktop 稳定性保证。** 本次不发布新的 Mac 安装包，原 Mac 0.3.0-preview.1 保留；其历史有限测试不等于完整可靠性验证。
 
-## 这次改了什么
+## 功能和修复
 
-**本项目的部分 MCP 通信、任务执行和辅助功能集成自 [DSH Crew](https://github.com/ZSeven-W/dsh-crew) 0.1.0-rc.14，原作者 ZSeven-W，使用 MIT 许可。保留其版权、源码和完整许可；不将上游功能标为本项目原创。** 这是基于 Crew 的开源改造与封装。
+- 内置基于 DSH Crew rc.14 的通信源码。网页关闭 Crew 总开关并重启后，仍可访问对话、派发任务并继续原会话。
+- Web 页面默认使用 3080，独立本机通信使用 19387。同一真实 Codex 聊天 ID 和相同工作目录保持绑定，重启后恢复 DSH 原生持久历史。
+- 固定 Flash / MAX，保留状态、结果读取、取消，以及独立目录和人工验收边界。
+- 修复 Windows 编码与 NSIS 参数、初始化期间取消仍提交模型的竞态、配置迁移、Web 初始化校验、状态文件恢复、日志脱敏和卸载停止流程。
+- 只迁移可验证归属的旧 Web MCP 注册，保留手工注册、其他 MCP、凭据与会话。当前注册名仍是 `dsh_desktop_crew`，实际运行面为 Web。
 
-本版把所需通信代码随安装包提供，安装到桥接器自己管理的目录。无需另外安装或启用 Desktop 的 Crew 插件。新增的本机通信入口独立于 Desktop 的 Web 服务；Codex 下发任务后，仍由 DSH Desktop 执行并显示真实对话。
+**部分 MCP 通信、任务执行和辅助功能集成自 [DSH Crew](https://github.com/ZSeven-W/dsh-crew) 0.1.0-rc.14，作者 ZSeven-W，MIT 许可。** 保留版权、固定原始归档、源码和完整许可，不将上游功能标为本项目原创。本项目没有重新实现 DSH Agent 引擎。
 
-每个 Codex 对话继续绑定自己的 Desktop 会话，后续任务接着聊。保留 Flash / MAX 模型限制、任务编号、结果回传和配置备份。
+## 下载与使用
 
-## 已验证
+下载本页 Windows x64 EXE，核对 `SHA256SUMS.txt`。安装前结束任务并停止旧 Web，安装后重启 Codex，从开始菜单打开 DSH Web。首次使用在网页配置自己的模型凭据。
 
-Mac Apple Silicon / DSH Desktop 0.2.1-rc.2：关闭整个 Crew 插件并重启后，两轮短文本任务沿用同一个历史会话，第二轮未重发暗号仍能正确回忆，结果可回传，Desktop 界面可见，两轮工具调用均为 0。16 项自动测试通过。Mac 通用 DMG 的镜像校验、临时签名和双架构检查通过。
+安装包包含 Node.js 24.19.0、DSH Web 0.2.1-alpha.3 和通信源码，无需另行启用 Crew。已有 Web 用户沿用原数据目录；Web 和 Desktop 的账号/历史不会自动合并。网页认证链接含本地令牌，请勿公开。
 
-详见 [实施与验证记录](docs/bundled-desktop-runtime.md)。
+## 验证与边界
 
-## 怎么安装
+- 20 项自动测试通过。
+- Windows Web 真实 MCP 通过：Crew 关闭、同会话回忆、MCP 重连、Web 重启恢复、文件写入/读取、取消及后续续聊。模型为 `deepseek-official/deepseek-flash` / max。
+- 中文与空格路径的隔离静默安装、重复配置、认证访问和卸载通过，保留会话、用户偏好、其他 MCP 和 profile 内持久组件。
+- 安装器使用 TESTMODE，未验证交互向导及真实快捷方式/注册表分支。未覆盖全新虚拟机、ARM64、多模态和大并发。EXE 未数字签名。
+- **Desktop 可靠性尚未验证。** 源码保留接入能力，本次只以 Windows Web 为验收范围。
+- 卸载保留 profile 内通信扩展，不自动恢复原 Crew 开关。手动回合和自行启动的后台工具应先结束，Windows 停止不是任意工具进程树回收机制。
+- 聊天历史持久化，旧 Job 内存记录可能在重启后消失。自动分支摘要与主动唤醒 Codex仍未实现。
 
-先安装并初始化 DSH Desktop，准备 Node.js 24+。从本页下载 `mac-universal.dmg`，把应用拖到“应用程序”。完全退出 Desktop，打开桥接器，运行“安装与配置”，完成后重新打开 Desktop 和 Codex。旧手工 MCP 注册若提示冲突，可按文档使用 `install --adopt-existing`；配置变更前会备份。
-
-应用使用临时签名，未经过 Apple 公证。请按 macOS 正常应用授权流程处理系统提示。
-
-## 发布范围与限制
-
-本次仅提供 **Mac 通用 DMG、源码包、许可说明、测试记录和校验文件**，不发布新 Windows 安装包。Windows 仍使用 [0.2.0-preview.1](https://github.com/SeyanaA/Codex-to-DSH-Bridge/releases/tag/v0.2.0-preview.1)，该旧包尚不包含本轮内置通信改造。Windows 源码与封装入口已调整，实机测试仍待完成；Intel Mac 未实机验证。
-
-自动识别任意分支并生成摘要、从外部主动唤醒 Codex仍未实现。聊天历史由 Desktop 保存，重启后旧 Job 的内存记录可能消失。未来 DSH 服务接口变更仍需兼容性验证；本项目没有重新实现 DSH Agent 引擎。
-
-上游与许可见 [第三方声明](THIRD_PARTY_NOTICES.md)。上一版发布说明保存在 [0.2 历史记录](docs/release-notes-0.2.0-preview.1.md)。
+详情：[Web 验收记录](https://github.com/SeyanaA/Codex-to-DSH-Bridge/blob/main/docs/windows-web-test.md) · [第三方声明](https://github.com/SeyanaA/Codex-to-DSH-Bridge/blob/main/THIRD_PARTY_NOTICES.md)。

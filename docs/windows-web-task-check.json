@@ -1,0 +1,151 @@
+{
+  "date": "2026-10-19",
+  "surface": "web",
+  "crewEnabled": false,
+  "dshVersion": "0.2.1-alpha.3",
+  "nodeVersion": "24.19.0",
+  "automatedTests": {
+    "passed": 20,
+    "failed": 0
+  },
+  "jobs": [
+    {
+      "id": "hub-1-mvf6a6hb",
+      "sessionId": "session-ccf3e585-30f9-240c-f776-20e6a854abb5",
+      "continued": false,
+      "model": "deepseek-flash",
+      "provider": "deepseek-official",
+      "effort": "max",
+      "status": "done",
+      "toolCalls": 0,
+      "tokens": {
+        "input": 10472,
+        "output": 3,
+        "reasoning": 0,
+        "cacheRead": 1664,
+        "cacheWrite": 0
+      },
+      "result": "已记住",
+      "error": null
+    },
+    {
+      "id": "hub-2-mvf6blzs",
+      "sessionId": "session-ccf3e585-30f9-240c-f776-20e6a854abb5",
+      "continued": true,
+      "model": "deepseek-flash",
+      "provider": "deepseek-official",
+      "effort": "max",
+      "status": "done",
+      "toolCalls": 0,
+      "tokens": {
+        "input": 260,
+        "output": 6,
+        "reasoning": 0,
+        "cacheRead": 11904,
+        "cacheWrite": 0
+      },
+      "result": "青瓷-8036",
+      "error": null
+    },
+    {
+      "id": "hub-1-mvf6e8by",
+      "sessionId": "session-ccf3e585-30f9-240c-f776-20e6a854abb5",
+      "continued": true,
+      "model": "deepseek-flash",
+      "provider": "deepseek-official",
+      "effort": "max",
+      "status": "done",
+      "toolCalls": 0,
+      "tokens": {
+        "input": 163,
+        "output": 22,
+        "reasoning": 0,
+        "cacheRead": 12032,
+        "cacheWrite": 0
+      },
+      "result": "青瓷-8036",
+      "error": null
+    },
+    {
+      "id": "hub-2-mvf6grr6",
+      "sessionId": "session-ccf3e585-30f9-240c-f776-20e6a854abb5",
+      "continued": true,
+      "model": "deepseek-flash",
+      "provider": "deepseek-official",
+      "effort": "max",
+      "status": "done",
+      "toolCalls": 4,
+      "tokens": {
+        "input": 891,
+        "output": 1065,
+        "reasoning": 0,
+        "cacheRead": 63232,
+        "cacheWrite": 0
+      },
+      "result": "已完成文件写入验收。\n\n**写入文件**：`bridge-proof.json`（位于当前工作区 `windows-web-smoke`，为新建文件）\n\n**读取核对结果**（读取工具 + 字节级校验）：\n- 内容与要求字段一致：`platform` = `\"windows\"`（字符串）、`surface` = `\"web\"`（字符串）、`crewPluginRequired` = `false`（布尔，非字符串）、`secret` = `\"青瓷-8036\"`（本对话暗号）\n- 编码：UTF-8，无 BOM；按 UTF-8 解码后中文暗号可正确还原\n- JSON 可正常解析，文件 106 字节、6 行\n- 工作区仅有该文件，未创建/修改其他目录或文件，未联网、未安装软件\n\n文件路径：[bridge-proof.json](C:\\Users\\admin\\OneDrive\\文档\\ChatGPT\\日常维护\\dsh-bridge-validation\\windows-web-smoke\\bridge-proof.json)",
+      "error": null
+    },
+    {
+      "id": "hub-1-mvf6ldzt",
+      "sessionId": "session-ccf3e585-30f9-240c-f776-20e6a854abb5",
+      "continued": true,
+      "model": "deepseek-flash",
+      "provider": "deepseek-official",
+      "effort": "max",
+      "status": "cancelled",
+      "toolCalls": 0,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "reasoning": 0
+      },
+      "result": null,
+      "error": "cancelled by request"
+    },
+    {
+      "id": "hub-2-mvf6n3v5",
+      "sessionId": "session-ccf3e585-30f9-240c-f776-20e6a854abb5",
+      "continued": true,
+      "model": "deepseek-flash",
+      "provider": "deepseek-official",
+      "effort": "max",
+      "status": "done",
+      "toolCalls": 12,
+      "tokens": {
+        "input": 14039,
+        "output": 58573,
+        "reasoning": 0,
+        "cacheRead": 608128,
+        "cacheWrite": 0
+      },
+      "result": "Independent static review written; original passphrase recalled. Findings verified by Codex before integration.",
+      "error": null
+    },
+    {
+      "id": "hub-1-mvf704n1",
+      "sessionId": "session-ccf3e585-30f9-240c-f776-20e6a854abb5",
+      "continued": true,
+      "model": "deepseek-flash",
+      "provider": "deepseek-official",
+      "effort": "max",
+      "status": "done",
+      "toolCalls": 0,
+      "tokens": {
+        "input": 237,
+        "output": 6,
+        "reasoning": 0,
+        "cacheRead": 81664,
+        "cacheWrite": 0
+      },
+      "result": "青瓷-8036",
+      "error": null
+    }
+  ],
+  "fileSha256": "e6b1e45fa338cc458321a092df18ed2060deb8bf186c6ec53a630d1e3ace7dc7",
+  "desktopTested": false,
+  "notes": [
+    "New MCP connections reuse the actual current Codex chat ID and the same isolated cwd.",
+    "In-memory Job IDs may be lost on host restart; native session history is durable.",
+    "Code review covers an intermediate source snapshot; only verified findings were integrated."
+  ]
+}

@@ -89,8 +89,8 @@ export async function control(action) {
     return response.ok ? response.json() : null;
   } catch { return null; }
 }
-export function openURL(url) {
-  if (new URL(url).origin !== BASE) throw new Error('拒绝打开非本机 DSH 地址。');
+export function openURL(url, expectedBase = BASE) {
+  if (new URL(expectedBase).hostname !== '127.0.0.1' || new URL(expectedBase).protocol !== 'http:' || new URL(url).origin !== new URL(expectedBase).origin) throw new Error('拒绝打开非本机 DSH 地址。');
   if (process.platform === 'darwin') run('/usr/bin/open', [url]);
   else if (process.platform === 'win32') {
     const script = `Start-Process -FilePath '${url.replace(/'/g, "''")}'`;

@@ -254,7 +254,7 @@ export class WorkerRegistry {
       });
       job.handle = handle;
       if (slot) { slot.handle = handle; slot.presetId = presetId; }
-      if (job.status === 'needs_input') { await handle.dispose(); return; }
+      if (job.status !== 'running') { await handle.dispose(); return; }
       try {
         // Group the worker session under the workspace of its cwd; create the
         // workspace when none exists yet (resolveByPath is exact-match, so a
@@ -268,6 +268,7 @@ export class WorkerRegistry {
         this.ctx.logger?.warn?.(`dsh-crew: workspace attach failed for ${cwdPath}: ${err?.message ?? err}`);
       }
       await handle.agent.whenIdle();
+      if (job.status !== 'running') return;
       handle.agent.followup(userMessage(task));
       await handle.agent.whenIdle();
       if (job.status === 'running') {
@@ -313,6 +314,7 @@ export class WorkerRegistry {
       job.status = 'cancelled';
       job.error = 'cancelled by request';
       try { await job.handle?.dispose(); } catch {}
+      await job.promise;
       this.publish();
     }
     return job;

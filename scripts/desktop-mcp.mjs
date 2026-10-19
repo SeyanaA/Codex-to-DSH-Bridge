@@ -41,7 +41,7 @@ const initialization = new Set();
 const toolLists = new Set();
 const proxy = await startSessionProxy(base.replace(/\/$/, ''), () => active?.original);
 const child = spawn(process.execPath, [entry], {
-  env: { ...process.env, DSHPLUGIN_CREW_HUB: proxy.url }, stdio: ['pipe', 'pipe', 'pipe'],
+  env: { ...process.env, DSHPLUGIN_CREW_HUB: proxy.url }, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true,
 });
 function emit(packet) { process.stdout.write(JSON.stringify(packet) + '\n'); }
 function forward(packet) { const { conversationKey, ...wire } = packet; child.stdin.write(JSON.stringify(wire) + '\n'); }

@@ -16,12 +16,15 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
-VERSION = json.loads((ROOT / 'package.json').read_text())['version']
+VERSION = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))['version']
 DIST = ROOT / 'dist'
 STAGE = Path(tempfile.mkdtemp(prefix='codex-dsh-release-'))
 DIST.mkdir(exist_ok=True)
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--previous-runtime', type=Path, default=DIST / 'previous/extracted')
+parser.add_argument('--windows-surface', choices=['desktop', 'web'], default='desktop')
+parser.add_argument('--windows-compression', choices=['lzma', 'zlib'], default='lzma')
+parser.add_argument('--makensis', default='makensis', help='Path to makensis.exe on Windows')
 parser.add_argument('--platform', choices=['all', 'mac', 'windows'], default='all')
 args = parser.parse_args()
 
@@ -66,7 +69,7 @@ else
 fi
 print '\n操作结束，可以关闭这个终端窗口。'
 read -k 1 '?按任意键结束…'
-'''.replace('ACTION', action))
+'''.replace('ACTION', action), encoding='utf-8')
         command.chmod(0o755)
     info = dict(CFBundleExecutable='BridgeLauncher', CFBundleName='Codex-to-DSH Bridge',
         CFBundleIdentifier='com.seyana.codex-to-dsh-bridge', CFBundlePackageType='APPL',
@@ -92,7 +95,7 @@ read -k 1 '?按任意键结束…'
 
 if args.platform in ['all', 'windows']:
     previous = args.previous_runtime
-    old_manifest = json.loads((previous / 'build-manifest.json').read_text())
+    old_manifest = json.loads((previous / 'build-manifest.json').read_text(encoding='utf-8'))
     archive = previous / 'bridge-runtime.tar.gz'
     if sha(archive) != old_manifest['archive']['sha256']: raise RuntimeError('Previous runtime checksum mismatch')
     stage = STAGE / 'windows'; stage.mkdir()
@@ -103,32 +106,38 @@ if args.platform in ['all', 'windows']:
         shutil.copy2(file, stage / 'payload/scripts' / file.name)
     shutil.copy2(ROOT / 'scripts/mcp.mjs', stage / 'payload/scripts/mcp.mjs')
     for file in [stage / 'payload/scripts/launcher.mjs']:
-        source = file.read_text().replace("const VERSION = '0.1.0-preview.2';", "const VERSION = '" + VERSION + "';")
-        file.write_text(source)
-    shutil.copytree(previous / 'runtime', stage / 'runtime')
+        source = file.read_text(encoding='utf-8').replace("const VERSION = '0.1.0-preview.2';", "const VERSION = '" + VERSION + "';")
+        file.write_text(source, encoding='utf-8')
+    # The dependency tree is already in the verified archive; only these three
+    # files are embedded separately by NSIS. Avoid copying tens of thousands
+    # of unused files, particularly slow under Windows security scanning.
+    (stage / 'runtime').mkdir()
+    for name in ['node.exe', 'NODE-LICENSE.txt', 'DSH-LICENSE.txt']:
+        shutil.copy2(previous / 'runtime' / name, stage / 'runtime' / name)
     shutil.copy2(archive, stage / archive.name)
-    sbom = json.loads((previous / 'SBOM.json').read_text())
+    sbom = json.loads((previous / 'SBOM.json').read_text(encoding='utf-8'))
     (stage / 'SBOM.json').write_text(json.dumps({'previousReleaseRuntime': sbom,
         'bridge': {'version': VERSION, 'sessionExtension': 'derived from Crew rc.14',
-                   'yaml': json.loads((ROOT / 'vendor/yaml/package.json').read_text())['version'],
+                   'yaml': json.loads((ROOT / 'vendor/yaml/package.json').read_text(encoding='utf-8'))['version'],
                    'yamlLicense': 'MIT', 'sharedDesktopScripts': 'payload/scripts'}}, indent=2) + '\n')
     for file in ['README.md', 'THIRD_PARTY_NOTICES.md', 'RELEASE_NOTES.md']:
         shutil.copy2(ROOT / file, stage / file)
     shutil.copytree(ROOT / 'docs', stage / 'docs')
     shutil.copy2(ROOT / 'packaging/windows/run.cmd', stage / 'run.cmd')
-    manifest = {**old_manifest, 'version': VERSION, 'defaultMode': 'desktop',
+    manifest = {**old_manifest, 'version': VERSION, 'defaultMode': args.windows_surface,
         'desktopApplication': 'User-installed DeepSeek Harness Desktop',
         'model': 'deepseek-official/deepseek-flash', 'effort': 'max',
-        'windowsNativeValidation': 'Not run on this Mac',
+        'windowsNativeValidation': 'See docs/windows-web-test.md for Windows results',
         'archive': old_manifest['archive']}
-    (stage / 'build-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    (stage / 'build-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
     output = DIST / f'Codex-to-DSH-Bridge-{VERSION}-windows-x64-setup.exe'
-    run('makensis', '-INPUTCHARSET', 'UTF8', '-V2', '-DOUTPUT=' + str(output), '-DSTAGING=' + str(stage), ROOT / 'packaging/windows/installer.nsi')
+    flag = '/' if os.name == 'nt' else '-'
+    run(args.makensis, flag + 'INPUTCHARSET', 'UTF8', flag + 'V2', flag + 'DBRIDGE_SURFACE=' + args.windows_surface, flag + 'DBRIDGE_COMPRESSOR=' + args.windows_compression, flag + 'DOUTPUT=' + str(output), flag + 'DSTAGING=' + str(stage), ROOT / 'packaging/windows/installer.nsi')
     artifacts.append(output)
 
 # The same Desktop files, byte for byte, are used by both packages.
 shared = ['desktop-mcp.mjs', 'desktop-settings.mjs', 'desktop-install.mjs', 'desktop-runtime.mjs',
-          'desktop-launcher.mjs', 'session-proxy.mjs', 'session-id.mjs', 'model-policy.mjs', 'build-session-hub.mjs', 'bundled-crew.mjs', 'bridge-transport.mjs']
+          'desktop-launcher.mjs', 'session-proxy.mjs', 'session-id.mjs', 'model-policy.mjs', 'build-session-hub.mjs', 'bundled-crew.mjs', 'bridge-transport.mjs', 'web-runtime.mjs', 'web-host.mjs']
 parity = {}
 for name in shared:
     values = []
@@ -150,14 +159,18 @@ with zipfile.ZipFile(source, 'w', zipfile.ZIP_DEFLATED) as zipfile_out:
     for file in (ROOT / prefix).rglob('*'):
         if file.is_file() and 'node_modules' not in file.parts:
             zipfile_out.write(file, str(Path('Codex-to-DSH-Bridge') / file.relative_to(ROOT)))
+    # These Windows offline scripts override the generic Mac Web scripts in
+    # payload(); they are required to rebuild from this source archive too.
+    for file in (windows_source := ROOT / 'release-build/windows-preview.2/app/payload/scripts').glob('*.mjs'):
+        zipfile_out.write(file, str(Path('Codex-to-DSH-Bridge') / file.relative_to(ROOT)))
     for name in ['package.json', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'RELEASE_NOTES.md']:
         zipfile_out.write(ROOT / name, 'Codex-to-DSH-Bridge/' + name)
 artifacts.append(source)
 checksums = {file.name: sha(file) for file in artifacts}
-(DIST / 'SHA256SUMS.txt').write_text(''.join(f'{value}  {name}\n' for name, value in checksums.items()))
-(DIST / 'local-stage.json').write_text(json.dumps({'staging': str(STAGE)}) + '\n')
+(DIST / 'SHA256SUMS.txt').write_text(''.join(f'{value}  {name}\n' for name, value in checksums.items()), encoding='utf-8')
+(DIST / 'local-stage.json').write_text(json.dumps({'staging': str(STAGE)}) + '\n', encoding='utf-8')
 record = {'version': VERSION, 'artifacts': checksums,
     'sharedDesktopScripts': parity, 'model': 'deepseek-official/deepseek-flash', 'effort': 'max',
     'windowsNativeTest': False, 'macIntelExecutionTest': False}
-(DIST / 'release-build-report.json').write_text(json.dumps(record, indent=2) + '\n')
+(DIST / 'release-build-report.json').write_text(json.dumps(record, indent=2) + '\n', encoding='utf-8')
 print(json.dumps(record, indent=2), flush=True)
